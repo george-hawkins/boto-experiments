@@ -1,3 +1,5 @@
+import sys
+
 import boto3
 import botocore.session
 from botocore.config import Config
@@ -9,6 +11,8 @@ from mypy_boto3_s3.service_resource import S3ServiceResource
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 from mypy_boto3_s3.type_defs import CreateBucketConfigurationTypeDef
 from mypy_boto3_logs.client import CloudWatchLogsClient
+
+from is_aws import is_aws
 
 
 def _show_time(name, f):
@@ -51,11 +55,13 @@ class BotoBasics:
         # On a box with `~/.aws/config`, this picks up the `region` value from there.
         region = botocore_session.get_config_variable("region")
 
-        # If no region is set then assume the current box is an EC2 instance and do the equivalent of
-        # `curl http://instance-data/latest/meta-data/placement/availability-zone/`
         if region is None:
+            if not is_aws():
+                sys.exit("cannot determine region")
+
             from botocore.utils import IMDSRegionProvider
 
+            # Do the equivalent of `curl http://instance-data/latest/meta-data/placement/availability-zone/`
             region_provider = IMDSRegionProvider(session=botocore_session)
             botocore_session.set_config_variable("region", region_provider.provide())
 
@@ -105,7 +111,7 @@ class BotoBasics:
 
     @property
     def logs_exceptions(self):
-        return  self._get_logs().exceptions
+        return self._get_logs().exceptions
 
     def _create_resource(self, f, fail_if_exists=False):
         try:
@@ -128,12 +134,13 @@ class BotoBasics:
         )
 
     def put_log_event(self, group_name, stream_name, log_event, sequence_token):
-        kwargs={
-            "logGroupName": group_name,
-            "logStreamName": stream_name,
-            "logEvents": [log_event],
-        }
+        kwargs = {}
+        # For the first message of a new stream, the sequence_token argument must be completely absent.
         if sequence_token is not None:
             kwargs["sequenceToken"] = sequence_token
-        return self._get_logs().put_log_events(**kwargs)["nextSequenceToken"]
-
+        return self._get_logs().put_log_events(
+            logGroupName=group_name,
+            logStreamName=stream_name,
+            logEvents=[log_event],
+            **kwargs
+        )["nextSequenceToken"]

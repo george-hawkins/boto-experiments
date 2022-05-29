@@ -1,2 +1,4 @@
 venv/
 .idea/
+scratch.py
+__pycache__/
