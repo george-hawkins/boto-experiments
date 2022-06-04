@@ -58,7 +58,11 @@ def main():
     parser.add_argument("--frames", help="comma separated list of frame numbers")
     parser.add_argument("blend_file", help="the .blend file to be rendered")
     args = parser.parse_args()
-    print(args)
+
+    group_name = name("log-group")
+    basics.create_log_group(group_name)
+
+    print(f"Listen for log output with: aws logs tail {group_name} --follow")
 
     frame_iter = get_frame_iter(args)
     packed_blend_file = get_packed_blend_file(args.blend_file)
@@ -82,11 +86,6 @@ def main():
     print(f"Created DynamoDB table {db_name}")
 
     sys.exit(0)
-
-    group_name = name("log-group")
-    basics.create_log_group(group_name)
-
-    print(f"Listen for log output with: aws logs tail {group_name} --follow")
 
     # Create a bucket and copy .blend file to "packed.blend" there.
     # Create log group and log frame count and bucket name.

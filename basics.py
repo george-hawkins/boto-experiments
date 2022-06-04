@@ -78,6 +78,11 @@ class BotoBasics:
     def create_bucket(self, name):
         return self._get_s3_resource().create_bucket(Bucket=name, CreateBucketConfiguration=self._bucket_config)
 
+    # If you have large numbers of buckets then it would be much better to filter by tag (you can't filter by name).
+    # See https://stackoverflow.com/a/36044264/245602
+    def list_buckets(self):
+        return self._get_s3_resource().buckets.all()
+
     def _get_dynamodb(self):
         self._dynamodb: DynamoDBServiceResource = self._get_or_create_resource(self._dynamodb, "dynamodb")
         return self._dynamodb
@@ -88,19 +93,24 @@ class BotoBasics:
 
     # Creating a table can take 20s.
     def create_table(self, name, schema, defs):
+        print(f"Creating table {name}...")
         table = self._get_dynamodb().create_table(
             TableName=name,
             KeySchema=schema,
             AttributeDefinitions=defs,
             BillingMode="PAY_PER_REQUEST"
         )
-        _show_time("wait_until_exists", lambda: table.wait_until_exists())
+        _show_time("table creation", lambda: table.wait_until_exists())
         return table
 
     @staticmethod
     def delete_table(table: Table):
+        print(f"Deleting table {table.table_name}...")
         table.delete()
-        _show_time("wait_until_not_exists", lambda: table.wait_until_not_exists())
+        _show_time("table deletion", lambda: table.wait_until_not_exists())
+
+    def list_tables(self):
+        return self._get_dynamodb().tables.all()
 
     def get_table(self, name):
         return self._get_dynamodb().Table(name)
@@ -126,6 +136,12 @@ class BotoBasics:
             # The default is to retain log entries forever.
             self._get_logs().put_retention_policy(logGroupName=name, retentionInDays=retention_in_days)
         self._create_resource(create, fail_if_exists)
+
+    def list_log_groups(self, prefix):
+        return self._get_logs().describe_log_groups(logGroupNamePrefix=prefix)["logGroups"]
+
+    def delete_log_group(self, name):
+        self._get_logs().delete_log_group(logGroupName=name)
 
     def create_log_stream(self, group_name, stream_name, fail_if_exists=False):
         self._create_resource(

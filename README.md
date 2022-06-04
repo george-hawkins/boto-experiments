@@ -213,3 +213,8 @@ obj.put(Body="foo bar")
 
 print("Success")
 ```
+
+Get latest version of AMI
+-------------------------
+
+    $ aws ec2 describe-images --owners aws-marketplace --filter 'Name=name,Values=amzn2-ami-graphics-hvm-*' --query 'sort_by(Images, &CreationDate)[-1].Name' --output text
