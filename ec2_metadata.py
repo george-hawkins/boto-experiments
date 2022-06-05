@@ -16,14 +16,15 @@ def _get_instance_data():
     return _INSTANCE_DATA if is_aws() else _CANNED_INSTANCE_DATA
 
 
-def _get_ec2_metadata():
+# See https://cloudinit.readthedocs.io/en/latest/topics/instancedata.html
+def _get_ec2_v1_metadata():
     with open(_get_instance_data(), "r") as read_file:
-        return json.load(read_file)["ds"]["meta-data"]
+        return json.load(read_file)["v1"]
 
 
 def get_instance_id():
-    return _get_ec2_metadata()["instance-id"]
+    return _get_ec2_v1_metadata()["instance-id"]
 
 
-def get_availability_zone():
-    return _get_ec2_metadata()["placement"]["availability-zone"]
+def get_region():
+    return _get_ec2_v1_metadata()["region"]

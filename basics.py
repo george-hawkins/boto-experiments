@@ -12,7 +12,7 @@ from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 from mypy_boto3_s3.type_defs import CreateBucketConfigurationTypeDef
 from mypy_boto3_logs.client import CloudWatchLogsClient
 
-from ec2_metadata import is_aws, get_availability_zone
+from ec2_metadata import is_aws, get_region
 
 
 def _show_time(name, f):
@@ -70,7 +70,7 @@ class BotoBasics:
             if not is_aws():
                 sys.exit("cannot determine region")
 
-            botocore_session.set_config_variable("region", get_availability_zone())
+            botocore_session.set_config_variable("region", get_region())
 
     def _get_or_create_client(self, field, name):
         return field if field is not None else self._session.client(name, config=self._config)
