@@ -229,9 +229,15 @@ Power-off
 
 The most aggressive power-off seems to be:
 
-    $ sudo poweroff --no-wtmp --no-sync --no-wall --force --force
+    $ sudo poweroff --no-wtmp --no-wall --force --force
 
 Specifying `--force` twice "results in an immediate shutdown without contacting the system manager."
+
+Note: this seems a bit to brutal as it doesn't give `ssh` a chance to properly disconnect you.
+
+For a proper disconnect:
+
+    $ sudo poweroff --no-wtmp --no-wall
 
 Putting log events from the CLI
 -------------------------------
