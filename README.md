@@ -218,3 +218,8 @@ Get latest version of AMI
 -------------------------
 
     $ aws ec2 describe-images --owners aws-marketplace --filter 'Name=name,Values=amzn2-ami-graphics-hvm-*' --query 'sort_by(Images, &CreationDate)[-1].Name' --output text
+
+Roles
+-----
+
+See [`create-role.md`](create-role.md).

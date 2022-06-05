@@ -1,0 +1,29 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "S3ListBucket",
+            "Effect": "Allow",
+            "Action": ["s3:ListBucket"],
+            "Resource": "*"
+        },
+        {
+            "Sid": "S3AllObjectActions",
+            "Effect": "Allow",
+            "Action": "s3:*Object",
+            "Resource": "*"
+        },
+        {
+            "Sid": "LogActions",
+            "Effect": "Allow",
+            "Action": "logs:*",
+            "Resource": "*"
+        },
+        {
+            "Sid": "DynamoDbActions",
+            "Effect": "Allow",
+            "Action": "dynamodb:*",
+            "Resource": "*"
+        }
+    ]
+}
