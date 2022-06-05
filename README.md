@@ -223,3 +223,92 @@ Roles
 -----
 
 See [`create-role.md`](create-role.md).
+
+Power-off
+---------
+
+The most aggressive power-off seems to be:
+
+    $ sudo poweroff --no-wtmp --no-sync --no-wall --force --force
+
+Specifying `--force` twice "results in an immediate shutdown without contacting the system manager."
+
+Putting log events from the CLI
+-------------------------------
+
+The `aws` command on the boxes is actually v1.
+
+Install AWS CLI v2 (yes, there really doesn't seem to be a `yum` package):
+
+    $ curl https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o awscliv2.zip
+    $ unzip awscliv2.zip
+    $ sudo ./aws/install
+
+It's installed to `/usr/local/bin`, so:
+
+    $ PATH=/usr/local/bin:$PATH
+
+Listen for log events:
+
+    $ /usr/local/bin/aws logs tail render-job-log-group-d1f294c6-1c17-430d-82b5-bc8136f84b71 --follow
+
+To create log events - first, create a stream (for the existing group):
+
+    $ /usr/local/bin/aws logs create-log-stream --log-group-name render-job-log-group-d1f294c6-1c17-430d-82b5-bc8136f84b71 --log-stream-name foobar
+
+Create an `events.json`:
+
+```
+$ cat > events.json << 'EOF'
+[
+  {
+    "timestamp": 1654437914755,
+    "message": "Example Event 1"
+  },
+  {
+    "timestamp": 1654437914756,
+    "message": "Example Event 2"
+  },
+  {
+    "timestamp": 1654437914757,
+    "message": "Example Event 3"
+  }
+]
+```
+
+Update the `timestamp` values with values generated using:
+
+    $ date +%s%3N
+
+And then put them like so:
+
+    $ aws logs put-log-events --log-group-name render-job-log-group-d1f294c6-1c17-430d-82b5-bc8136f84b71 --log-stream-name foobar --log-events file://events.json
+
+To put further events, you have to use the `sequence-token` returned by the first `put-log-events`:
+
+    $ aws logs put-log-events --log-group-name render-job-log-group-d1f294c6-1c17-430d-82b5-bc8136f84b71 --log-stream-name foobar --log-events file://events.json --sequence-token 49620733793119385444699042086678722610600419464713621746
+
+EC2 instance setup
+------------------
+
+Make sure IAM role is attached before copying from S3.
+
+Download and unpack Blender:
+
+    $ s3_file='s3://file-store-dcede0e0-aec4-4920-9532-c89a3a151af2/blender-3.1.2-linux-x64.tar.xz'
+    $ aws s3 cp $s3_file .
+    $ mkdir blender
+    $ time tar -xf ${s3_file##*/} --strip-components=1 -C blender
+
+Set up the virtual environment:
+
+    $ python3 -m venv venv
+    $ source venv/bin/activate
+    $ pip install --upgrade pip
+    $ pip install boto3 'boto3-stubs[essential,logs]'
+
+Make sure `render_job_worker.ini` contains the right job ID etc.
+
+Start the job:
+
+    $ python render_job_worker.py
