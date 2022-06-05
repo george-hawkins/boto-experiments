@@ -1,4 +1,7 @@
 venv/
 .idea/
-scratch.py
 __pycache__/
+scratch.py
+create_render_job.ini
+render_job_worker.ini
+packed.blend

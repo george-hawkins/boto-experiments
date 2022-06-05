@@ -7,12 +7,12 @@ from timeit import default_timer as timer
 
 # boto3-stubs type annotations - https://mypy-boto3.readthedocs.io/en/latest/
 from mypy_boto3_dynamodb.type_defs import AttributeDefinitionTypeDef, KeySchemaElementTypeDef
-from mypy_boto3_s3.service_resource import S3ServiceResource
+from mypy_boto3_s3.service_resource import S3ServiceResource, Bucket, Object
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 from mypy_boto3_s3.type_defs import CreateBucketConfigurationTypeDef
 from mypy_boto3_logs.client import CloudWatchLogsClient
 
-from is_aws import is_aws
+from ec2_metadata import is_aws, get_availability_zone
 
 
 def _show_time(name, f):
@@ -29,6 +29,17 @@ def create_key_schema_element(name, key_type):
 
 def create_attribute_definition(name, attr_type):
     return AttributeDefinitionTypeDef(AttributeName=name, AttributeType=attr_type)
+
+
+# These "s3://..." URIs just seem to be an aws-cli thing - they're not used in boto.
+def get_s3_uri(item):
+    name = type(item).__name__
+    if name == 's3.Bucket':
+        return f"s3://{item.name}"
+    elif name == 's3.Object':
+        return f"s3://{item.bucket_name}/{item.key}"
+    else:
+        raise RuntimeError(f"unexpected type {type(item)}")
 
 
 class BotoBasics:
@@ -59,11 +70,7 @@ class BotoBasics:
             if not is_aws():
                 sys.exit("cannot determine region")
 
-            from botocore.utils import IMDSRegionProvider
-
-            # Do the equivalent of `curl http://instance-data/latest/meta-data/placement/availability-zone/`
-            region_provider = IMDSRegionProvider(session=botocore_session)
-            botocore_session.set_config_variable("region", region_provider.provide())
+            botocore_session.set_config_variable("region", get_availability_zone())
 
     def _get_or_create_client(self, field, name):
         return field if field is not None else self._session.client(name, config=self._config)
@@ -77,6 +84,9 @@ class BotoBasics:
 
     def create_bucket(self, name):
         return self._get_s3_resource().create_bucket(Bucket=name, CreateBucketConfiguration=self._bucket_config)
+
+    def get_bucket(self, name):
+        return self._get_s3_resource().Bucket(name)
 
     # If you have large numbers of buckets then it would be much better to filter by tag (you can't filter by name).
     # See https://stackoverflow.com/a/36044264/245602

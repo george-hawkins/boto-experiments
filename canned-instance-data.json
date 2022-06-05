@@ -1,0 +1,10 @@
+{
+ "ds": {
+  "meta-data": {
+   "instance-id": "i-002062fc351fd863c", 
+   "placement": {
+    "availability-zone": "eu-central-1b"
+   }
+  }
+ }
+}

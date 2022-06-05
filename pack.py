@@ -1,5 +1,4 @@
 import os
-import shutil
 import subprocess
 import textwrap
 
@@ -21,7 +20,6 @@ def _get_python_expr(output_file):
 
 
 def pack_blend_file(blender, input_file, output_file):
-    shutil.copyfile(input_file, output_file)
     subprocess.run([
         blender,
         "--background",

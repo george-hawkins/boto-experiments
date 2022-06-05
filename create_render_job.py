@@ -1,12 +1,14 @@
 import argparse
-import configparser
 import os
 import sys
 import tempfile
+from pathlib import Path
 
 from uuid import uuid4
 
-from basics import BotoBasics
+from basics import BotoBasics, get_s3_uri
+from cloud_watch_logger import CloudWatchLogger
+from config import get_config
 from frame_table import FramesTable
 from pack import pack_blend_file
 
@@ -18,15 +20,7 @@ def name(s):
     return f"render-job-{s}-{job_id}"
 
 
-def get_config():
-    # Basic interpolation uses the format '%(name)s' - yes, the 's' is really part of it. So use
-    # less bizarre extended version that uses '${name}'.
-    config = configparser.ConfigParser(os.environ, interpolation=configparser.ExtendedInterpolation())
-    config.read("config.ini")
-    return config["DEFAULT"]
-
-
-config = get_config()
+config = get_config("create_render_job.ini")
 
 blender = f"{config['blender_home']}/blender"
 
@@ -60,9 +54,10 @@ def main():
     args = parser.parse_args()
 
     group_name = name("log-group")
-    basics.create_log_group(group_name)
+    stream_name = Path(__file__).stem
+    logger = CloudWatchLogger(basics, group_name, stream_name)
 
-    print(f"Listen for log output with: aws logs tail {group_name} --follow")
+    print(f"Listen for log output with 'aws logs tail {group_name} --follow'")
 
     frame_iter = get_frame_iter(args)
     packed_blend_file = get_packed_blend_file(args.blend_file)
@@ -75,15 +70,16 @@ def main():
 
     os.unlink(packed_blend_file)
 
-    # These "s3://..." URIs just seem to be an aws-cli thing - they're not used in boto.
-    print(f"Uploaded s3://{s3_blend_file.bucket_name}/{s3_blend_file.key}")
+    logger.info(f"uploaded {get_s3_uri(s3_blend_file)}")
+    result_dir = bucket.Object("frames")
+    logger.info(f"to sync results use 'aws s3 sync {get_s3_uri(result_dir)} {result_dir.key}'")
 
     db_name = name("dynamodb")
     frames_table = FramesTable(basics, db_name)
 
     frames_table.create(frame_iter)
 
-    print(f"Created DynamoDB table {db_name}")
+    logger.info(f"created DynamoDB table {db_name}")
 
     sys.exit(0)
 
