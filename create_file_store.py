@@ -1,6 +1,6 @@
 from uuid import uuid4
 
-from basics import BotoBasics, get_s3_uri
+from boto_basics import BotoBasics, get_s3_uri
 
 basics = BotoBasics()
 

@@ -1,4 +1,4 @@
-from basics import BotoBasics
+from boto_basics import BotoBasics
 from mypy_boto3_logs.type_defs import InputLogEventTypeDef
 from datetime import datetime, timezone
 

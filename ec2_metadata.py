@@ -1,7 +1,7 @@
 import json
 from os.path import isfile
 
-# This file exists on Amazon Linux 2 and Ubuntu instances.
+# This file exists on both Amazon Linux 2 and Ubuntu EC2 instances.
 _INSTANCE_DATA = "/run/cloud-init/instance-data.json"
 
 # Use to provide canned values when running locally.

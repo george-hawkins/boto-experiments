@@ -1,4 +1,4 @@
-from basics import BotoBasics
+from boto_basics import BotoBasics
 
 basics = BotoBasics()
 

@@ -1,6 +1,6 @@
-from basics import BotoBasics
-from basics import create_key_schema_element as table_key
-from basics import create_attribute_definition as table_attr
+from boto_basics import BotoBasics
+from boto_basics import create_key_schema_element as table_key
+from boto_basics import create_attribute_definition as table_attr
 
 from boto3.dynamodb.conditions import Attr
 

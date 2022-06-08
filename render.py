@@ -4,6 +4,7 @@ import os.path
 import glob
 
 # OPTIX actually seems to be slower than CUDA on the EC2 V100 cards.
+# And, just as odd, "CUDA+CPU" seems to be slower than just "CUDA" on its own.
 _CYCLES_DEVICE = "CUDA"
 
 
@@ -11,7 +12,7 @@ def _get_python_expr(samples):
     code = f"""
         import bpy
         
-        bpy.data.scenes["Scene"].cycles.samples = {samples}
+        bpy.context.scene.cycles.samples = {samples}
     """
     return textwrap.dedent(code)
 

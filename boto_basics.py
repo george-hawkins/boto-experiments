@@ -7,7 +7,7 @@ from timeit import default_timer as timer
 
 # boto3-stubs type annotations - https://mypy-boto3.readthedocs.io/en/latest/
 from mypy_boto3_dynamodb.type_defs import AttributeDefinitionTypeDef, KeySchemaElementTypeDef
-from mypy_boto3_s3.service_resource import S3ServiceResource, Bucket, Object
+from mypy_boto3_s3.service_resource import S3ServiceResource
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 from mypy_boto3_s3.type_defs import CreateBucketConfigurationTypeDef
 from mypy_boto3_logs.client import CloudWatchLogsClient

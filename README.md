@@ -318,3 +318,17 @@ Make sure `render_job_worker.ini` contains the right job ID etc.
 Start the job:
 
     $ python render_job_worker.py
+
+DynamoDB
+--------
+
+Deleting items that match a filter:
+
+```
+items = table.scan(FilterExpression=Attr("in_progress").eq(1), ConsistentRead=True)["Items"]
+for i in items:
+    table.delete_item(Key={"filler": 0, "frame": i["frame"]})
+```
+
+You can filter for something but there's no way to just say "return me the first item that matches the filter", the `Limit` parameter limits the number of items _before_ the filtering is applied!
+

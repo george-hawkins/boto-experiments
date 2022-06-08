@@ -1,7 +1,6 @@
 import os
-import sys
 
-from basics import BotoBasics, get_s3_uri
+from boto_basics import BotoBasics, get_s3_uri
 from cloud_watch_logger import CloudWatchLogger
 from config import get_config
 from ec2_metadata import get_instance_id
@@ -27,6 +26,7 @@ def main():
     stream_name = get_instance_id()
     logger = CloudWatchLogger(basics, group_name, stream_name)
 
+    # TODO: get rid of this copying - it's done externally.
     bucket_name = name("bucket")
     bucket = basics.get_bucket(bucket_name)
     blend_file = "packed.blend"
