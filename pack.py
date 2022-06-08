@@ -4,6 +4,8 @@ import textwrap
 
 
 def _get_python_expr(output_file):
+    # Blender will fail if the output path is not absolute.
+    out = os.path.abspath(output_file)
     code = f"""
         import sys
         import traceback
@@ -11,7 +13,7 @@ def _get_python_expr(output_file):
 
         try:
             bpy.ops.file.pack_all()
-            bpy.ops.wm.save_as_mainfile(filepath="{output_file}", compress=True, copy=True)
+            bpy.ops.wm.save_as_mainfile(filepath="{out}", compress=True, copy=True)
         except Exception:
             traceback.print_exc()
             sys.exit(1)

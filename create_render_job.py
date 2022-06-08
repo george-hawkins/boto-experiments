@@ -7,7 +7,6 @@ from uuid import uuid4
 
 from boto_basics import BotoBasics, get_s3_uri
 from cloud_watch_logger import CloudWatchLogger
-from config import get_config
 from frame_table import FramesTable
 from pack import pack_blend_file
 from scene_attributes import get_scene_attributes
@@ -25,14 +24,10 @@ def name(s):
     return f"render-job-{s}-{job_id}"
 
 
-config = get_config("create_render_job.ini")
-
-blender = f"{config['blender_home']}/blender"
-
-
 def parse_args():
     # Start frame etc. are read from the .blend file - only use `--start` etc. if you want to override these.
     parser = argparse.ArgumentParser()
+    parser.add_argument("--blender-home", required=True, help="root directory of Blender installation")
     parser.add_argument("--start", type=int, help="start frame (inclusive)")
     parser.add_argument("--end", type=int, help="end frame (inclusive)")
     parser.add_argument("--step", type=int, help="step size from one frame to the next")
@@ -41,6 +36,7 @@ def parse_args():
     parser.add_argument("blend_file", help="the .blend file to be rendered")
     args = parser.parse_args()
 
+    blender = f"{args.blender_home}/blender"
     blend_file = args.blend_file
 
     attrs = get_scene_attributes(blender, blend_file)
@@ -64,7 +60,7 @@ def parse_args():
             step = args.step
         frames = range(start, end + 1, step)
 
-    return blend_file, frames, samples
+    return blender, blend_file, frames, samples
 
 
 def frames_str(frames):
@@ -82,7 +78,7 @@ def main():
 
     print(f"Listen for log output with 'aws logs tail {group_name} --follow'")
 
-    blend_file, frames, samples = parse_args()
+    blender, blend_file, frames, samples = parse_args()
 
     logger.info(f".blend file = {blend_file}, {frames_str(frames)} and samples = {samples}")
 
@@ -114,13 +110,8 @@ def main():
 
     sys.exit(0)
 
-    # Create a bucket and copy .blend file to "packed.blend" there.
-    # Create log group and log frame count and bucket name.
-    # Create DB
-    # Create results directory on bucket.
-    # Launch spot fleet
-    # Sync results to local
-    # Delete bucket (and DB if not done by fleet).
+    # Launch spot fleet.
+    # Delete bucket etc. if not done by fleet.
 
 
 if __name__ == "__main__":

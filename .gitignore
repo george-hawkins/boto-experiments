@@ -2,7 +2,6 @@ venv/
 .idea/
 __pycache__/
 frames/
-scratch.py
-create_render_job.ini
-render_job_worker.ini
-packed.blend
+junk/
+packed.blend*
+start_job
