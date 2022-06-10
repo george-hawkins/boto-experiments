@@ -1,2 +1,19 @@
-# TODO: add in Python venv setup etc.
-python render_job_worker.py --samples $samples
+#!/bin/bash -e
+
+filestore='s3://file-store-dcede0e0-aec4-4920-9532-c89a3a151af2'
+blender='blender-3.1.2-linux-x64.tar.xz'
+
+# Download and unpack Blender.
+s3_file="$filestore/$blender"
+aws s3 cp "$s3_file" .
+mkdir blender
+tar -xf "$blender" --strip-components=1 -C blender
+
+# Create the Python setup.
+python3 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip
+pip install boto3 'boto3-stubs[essential,logs]'
+
+# Start the job.
+python render_job_worker.py --samples $samples --render-job-id $render_job_id

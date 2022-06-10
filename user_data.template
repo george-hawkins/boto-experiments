@@ -1,0 +1,3 @@
+aws s3 cp s3://render-job-bucket-$render_job_id . --recursive
+chmod u+x start_job 
+./start_job

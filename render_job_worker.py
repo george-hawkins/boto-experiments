@@ -15,16 +15,13 @@ basics = BotoBasics()
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--blender-home", default="blender", help="root directory of Blender installation")
-    parser.add_argument("--render-job-id", help="render job UUID")
     parser.add_argument("--samples", required=True, help="number of samples to render for each picture")
+    parser.add_argument("--render-job-id", required=True, help="render job UUID")
     args = parser.parse_args()
 
     blender = f"{args.blender_home}/blender"
-    samples = args.samples
-    # When started on EC2, RENDER_JOB_ID should be available, but locally it can be provided as an argument.
-    job_id = args.render_job_id if args.render_job_id is not None else os.environ["RENDER_JOB_ID"]
 
-    return blender, samples, job_id
+    return blender, args.samples, args.render_job_id
 
 
 def main():

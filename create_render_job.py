@@ -14,7 +14,7 @@ from worker_files import upload_worker_files
 
 PACKED_BLEND_FILE = "packed.blend"
 START_JOB = "start_job"
-START_JOB_TEMPLATE = f"{START_JOB}.template"
+USER_DATA = "user_data"
 
 basics = BotoBasics()
 job_id = uuid4()
@@ -85,13 +85,15 @@ def main():
     bucket_name = name("bucket")
     bucket = basics.create_bucket(bucket_name)
 
-    mappings = {"samples": samples}
+    def substitute(filename, **kwargs):
+        with open(f"{filename}.template", "r") as read_file:
+            template = Template(read_file.read())
+            content = template.safe_substitute(kwargs)
+            with open(filename, "w") as write_file:
+                write_file.write(content)
 
-    with open(START_JOB_TEMPLATE, "r") as read_file:
-        template = Template(read_file.read())
-        content = template.substitute(mappings)
-        with open(START_JOB, "w") as write_file:
-            write_file.write(content)
+    substitute(START_JOB, samples=samples, render_job_id=job_id)
+    substitute(USER_DATA, render_job_id=job_id)
 
     pack_blend_file(blender, blend_file, PACKED_BLEND_FILE)
 
