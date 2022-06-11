@@ -86,11 +86,9 @@ def main():
     bucket = basics.create_bucket(bucket_name)
 
     def substitute(filename, **kwargs):
-        with open(f"{filename}.template", "r") as read_file:
-            template = Template(read_file.read())
-            content = template.safe_substitute(kwargs)
-            with open(filename, "w") as write_file:
-                write_file.write(content)
+        template = Template(Path(f"{filename}.template").read_text())
+        content = template.safe_substitute(kwargs)
+        Path(filename).write_text(content)
 
     substitute(START_JOB, samples=samples, render_job_id=job_id)
     substitute(USER_DATA, render_job_id=job_id)

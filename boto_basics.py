@@ -1,4 +1,5 @@
 import sys
+from typing import List
 
 import boto3
 import botocore.session
@@ -7,12 +8,19 @@ from timeit import default_timer as timer
 
 # boto3-stubs type annotations - https://mypy-boto3.readthedocs.io/en/latest/
 from mypy_boto3_dynamodb.type_defs import AttributeDefinitionTypeDef, KeySchemaElementTypeDef
+from mypy_boto3_ec2.service_resource import EC2ServiceResource, Instance
+from mypy_boto3_ec2.client import EC2Client
 from mypy_boto3_s3.service_resource import S3ServiceResource
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 from mypy_boto3_s3.type_defs import CreateBucketConfigurationTypeDef
 from mypy_boto3_logs.client import CloudWatchLogsClient
 
 from ec2_metadata import is_aws, get_region
+
+
+# https://stackoverflow.com/a/952952/245602
+def _flatten(xss):
+    return [x for xs in xss for x in xs]
 
 
 def _show_time(name, f):
@@ -53,9 +61,10 @@ class BotoBasics:
         # See https://docs.aws.amazon.com/sdkref/latest/guide/feature-smart-config-defaults.html
         # noinspection PyArgumentList
         self._config = Config(defaults_mode="standard")
+        self._ec2_resource = None
         self._s3_resource = None
-        self._dynamodb = None
-        self._logs = None
+        self._dynamodb_resource = None
+        self._logs_client = None
 
         # Dynamodb tables and other entities are created in the current region by default.
         # However, for whatever reason, you must specify the region for buckets.
@@ -78,8 +87,80 @@ class BotoBasics:
     def _get_or_create_resource(self, field, name):
         return field if field is not None else self._session.resource(name, config=self._config)
 
-    def _get_s3_resource(self):
-        self._s3_resource: S3ServiceResource = self._get_or_create_resource(self._s3_resource, "s3")
+    def _get_ec2_client(self) -> EC2Client:
+        return self._get_ec2_resource().meta.client
+
+    def get_latest_image(self, name_pattern):
+        images = self._get_ec2_client().describe_images(Filters=[{"Name": "name", "Values": [name_pattern]}])["Images"]
+        return sorted(images, key=lambda item: item["CreationDate"])[-1]
+
+    def _get_ec2_resource(self) -> EC2ServiceResource:
+        self._ec2_resource = self._get_or_create_resource(self._ec2_resource, "ec2")
+        return self._ec2_resource
+
+    def create_instances(
+        self,
+        name,
+        image_id,
+        instance_type,
+        security_group_name,
+        iam_instance_profile=None,
+        user_data=None,
+        count=1,
+        min_count=1,
+        key_name=None,
+        shutdown_behavior="terminate",
+        spot=False
+    ) -> List[Instance]:
+        kwargs = {}
+        if key_name is not None:
+            kwargs["KeyName"] = key_name
+        if iam_instance_profile is not None:
+            kwargs["IamInstanceProfile"] = {"Name": iam_instance_profile}
+        if spot:
+            kwargs["InstanceMarketOptions"] = {"MarketType": "spot"}
+        if user_data is not None:
+            kwargs["UserData"] = user_data
+
+        # Set the tag that's shown as the instance name in the EC2 dashboard.
+        name_tag = {'ResourceType': 'instance', 'Tags': [{'Key': 'Name', 'Value': name}]}
+
+        # noinspection PyTypeChecker
+        return self._get_ec2_resource().create_instances(
+            ImageId=image_id,
+            InstanceType=instance_type,
+            SecurityGroups=[security_group_name],
+            InstanceInitiatedShutdownBehavior=shutdown_behavior,  # defaults to "stop" if not specified.
+            TagSpecifications=[name_tag],
+            MaxCount=count,
+            MinCount=min_count,
+            **kwargs
+        )
+
+    # Waits up to 200s (after which point it throws an exception) for the instances to come into existence.
+    # Only once the instances exist can you call other methods like `describe_instances` (otherwise they'll
+    # throw `InvalidInstanceID.NotFound`). Typically, the request itself introduces enough delay that the
+    # instances exist by the time its received and the call returns within milliseconds.
+    def wait_instances_exist(self, instance_id):
+        waiter = self._get_ec2_client().get_waiter("instance_exists")
+        waiter.wait(InstanceIds=instance_id)
+
+    # This returns simple dicts of name/value pairs whereas `create_instances` returns instances of `Instance`.
+    def describe_instances(self, instance_ids) -> List[dict]:
+        reservations = self._get_ec2_client().describe_instances(InstanceIds=instance_ids)["Reservations"]
+        return _flatten([reservation["Instances"] for reservation in reservations])
+
+    # Much more light-weight than `describe_instances` - this just returns status information.
+    # Unlike `describe_instance`, this method returns nothing if the instance is not in running state.
+    def describe_instance_status(self, instance_ids) -> List[dict]:
+        return self._get_ec2_client().describe_instance_status(InstanceIds=instance_ids)["InstanceStatuses"]
+
+    @property
+    def ec2_exceptions(self):
+        return self._get_ec2_client().exceptions
+
+    def _get_s3_resource(self) -> S3ServiceResource:
+        self._s3_resource = self._get_or_create_resource(self._s3_resource, "s3")
         return self._s3_resource
 
     def create_bucket(self, name):
@@ -93,18 +174,18 @@ class BotoBasics:
     def list_buckets(self):
         return self._get_s3_resource().buckets.all()
 
-    def _get_dynamodb(self):
-        self._dynamodb: DynamoDBServiceResource = self._get_or_create_resource(self._dynamodb, "dynamodb")
-        return self._dynamodb
+    def _get_dynamodb_resource(self) -> DynamoDBServiceResource:
+        self._dynamodb_resource = self._get_or_create_resource(self._dynamodb_resource, "dynamodb")
+        return self._dynamodb_resource
 
     @property
     def dynamodb_exceptions(self):
-        return self._get_dynamodb().meta.client.exceptions
+        return self._get_dynamodb_resource().meta.client.exceptions
 
     # Creating a table can take 20s.
     def create_table(self, name, schema, defs):
         print(f"Creating table {name}...")
-        table = self._get_dynamodb().create_table(
+        table = self._get_dynamodb_resource().create_table(
             TableName=name,
             KeySchema=schema,
             AttributeDefinitions=defs,
@@ -120,20 +201,20 @@ class BotoBasics:
         _show_time("table deletion", lambda: table.wait_until_not_exists())
 
     def list_tables(self):
-        return self._get_dynamodb().tables.all()
+        return self._get_dynamodb_resource().tables.all()
 
     def get_table(self, name):
-        return self._get_dynamodb().Table(name)
+        return self._get_dynamodb_resource().Table(name)
 
-    def _get_logs(self):
-        self._logs: CloudWatchLogsClient = self._get_or_create_client(self._logs, "logs")
-        return self._logs
+    def _get_logs_client(self) -> CloudWatchLogsClient:
+        self._logs_client = self._get_or_create_client(self._logs_client, "logs")
+        return self._logs_client
 
     @property
     def logs_exceptions(self):
-        return self._get_logs().exceptions
+        return self._get_logs_client().exceptions
 
-    def _create_resource(self, f, fail_if_exists=False):
+    def _create_log_entity(self, f, fail_if_exists=False):
         try:
             f()
         except self.logs_exceptions.ResourceAlreadyExistsException as e:
@@ -142,20 +223,20 @@ class BotoBasics:
 
     def create_log_group(self, name, retention_in_days=1, fail_if_exists=False):
         def create():
-            self._get_logs().create_log_group(logGroupName=name)
+            self._get_logs_client().create_log_group(logGroupName=name)
             # The default is to retain log entries forever.
-            self._get_logs().put_retention_policy(logGroupName=name, retentionInDays=retention_in_days)
-        self._create_resource(create, fail_if_exists)
+            self._get_logs_client().put_retention_policy(logGroupName=name, retentionInDays=retention_in_days)
+        self._create_log_entity(create, fail_if_exists)
 
     def list_log_groups(self, prefix):
-        return self._get_logs().describe_log_groups(logGroupNamePrefix=prefix)["logGroups"]
+        return self._get_logs_client().describe_log_groups(logGroupNamePrefix=prefix)["logGroups"]
 
     def delete_log_group(self, name):
-        self._get_logs().delete_log_group(logGroupName=name)
+        self._get_logs_client().delete_log_group(logGroupName=name)
 
     def create_log_stream(self, group_name, stream_name, fail_if_exists=False):
-        self._create_resource(
-            lambda: self._get_logs().create_log_stream(logGroupName=group_name, logStreamName=stream_name),
+        self._create_log_entity(
+            lambda: self._get_logs_client().create_log_stream(logGroupName=group_name, logStreamName=stream_name),
             fail_if_exists
         )
 
@@ -164,7 +245,7 @@ class BotoBasics:
         # For the first message of a new stream, the sequence_token argument must be completely absent.
         if sequence_token is not None:
             kwargs["sequenceToken"] = sequence_token
-        return self._get_logs().put_log_events(
+        return self._get_logs_client().put_log_events(
             logGroupName=group_name,
             logStreamName=stream_name,
             logEvents=[log_event],

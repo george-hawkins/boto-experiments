@@ -1,5 +1,6 @@
 import json
 from os.path import isfile
+from pathlib import Path
 
 # This file exists on both Amazon Linux 2 and Ubuntu EC2 instances.
 _INSTANCE_DATA = "/run/cloud-init/instance-data.json"
@@ -18,8 +19,7 @@ def _get_instance_data():
 
 # See https://cloudinit.readthedocs.io/en/latest/topics/instancedata.html
 def _get_ec2_v1_metadata():
-    with open(_get_instance_data(), "r") as read_file:
-        return json.load(read_file)["v1"]
+    return json.loads(Path(_get_instance_data()).read_text())["v1"]
 
 
 def get_instance_id():

@@ -1,5 +1,12 @@
 #!/bin/bash
+
+# The initial PWD is /.
+home=/var/tmp/render_job
+mkdir $home
+cd $home
+
 aws s3 cp s3://render-job-bucket-$render_job_id . --recursive
 chmod u+x start_job 
 ./start_job
+
 sudo poweroff
