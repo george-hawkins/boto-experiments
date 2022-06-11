@@ -54,6 +54,8 @@ def main():
         frames_table.delete_frame(frame)
         logger.info(f"completed and uploaded {get_s3_uri(s3_output_file)}")
 
+    logger.info("exiting")
+
 
 if __name__ == "__main__":
     main()

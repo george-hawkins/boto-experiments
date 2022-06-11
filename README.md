@@ -344,3 +344,73 @@ Jun 11 11:21:12 cloud-init[2401]: __init__.py[WARNING]: Unhandled non-multipart 
 The important bit is `__init__.py` which gives you the clue that something Python related is trying to consume the user data.
 
 Actually, looking at the cloud-init [documentation](https://cloudinit.readthedocs.io/en/latest/topics/format.html#user-data-script), I think it assumes a multipart archive (and the `__init.py__` warning is coming from the cloud-init logic trying to consume this) and that if you want you data interpreted as a script then you must include a `#!`.
+
+Spot instances
+--------------
+
+The documentation for the _instance market options_ that are used to configure a spot request aren't very well documented - the best description seems to be in the boto3 API reference documentation for [`run_instances`](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ec2.html#EC2.Client.run_instances).
+
+```
+InstanceMarketOptions={
+    'MarketType': 'spot',
+    'SpotOptions': {
+        'MaxPrice': 'string',
+        'SpotInstanceType': 'one-time'|'persistent',
+        'BlockDurationMinutes': 123,
+        'ValidUntil': datetime(2015, 1, 1),
+        'InstanceInterruptionBehavior': 'hibernate'|'stop'|'terminate'
+    }
+}
+```
+
+`MaxPrice` defaults to the on-demand price if not specified. `SpotInstanceType` defaults to `one-time`, `BlockDuration` is deprecated, `ValidUntil` can't be used with `one-time` and `InstanceInterruptionBehavior` defaults to and has to be `terminate` for `one-time`.
+
+So simply specifying `MarketType` is enough if you just want `one-time` behavior and are happy to pay the on-demand price in the worst case.
+
+The documentation doesn't say that `SpotInstanceType` defaults to `one-time` but you can see this is the case, if you e.g. just specify `MarketType=spot` and nothing else, and then look at the _Spot Requests_ in the EC2 dashboard - there you see "Persistence: one-time" and "Interruption behavior: terminate".
+
+Spot pricing
+------------
+
+It doesn't seem to be possible to ask "what price am I paying for my currently running spot instances?" Instead, you have to look up the current spot price for the relevant availability zone.
+
+You can do this like so:
+
+```
+$ aws ec2 describe-spot-price-history --start-time=$(date +%s) --product-descriptions='Linux/UNIX' --instance-types g4dn.xlarge
+{
+    "SpotPriceHistory": [
+        {
+            "AvailabilityZone": "eu-central-1c",
+            "InstanceType": "g4dn.xlarge",
+            "ProductDescription": "Linux/UNIX",
+            "SpotPrice": "0.197400",
+            "Timestamp": "2022-06-10T21:56:38+00:00"
+        },
+        {
+            "AvailabilityZone": "eu-central-1b",
+            "InstanceType": "g4dn.xlarge",
+            "ProductDescription": "Linux/UNIX",
+            "SpotPrice": "0.197400",
+            "Timestamp": "2022-06-10T19:46:42+00:00"
+        },
+        {
+            "AvailabilityZone": "eu-central-1a",
+            "InstanceType": "g4dn.xlarge",
+            "ProductDescription": "Linux/UNIX",
+            "SpotPrice": "0.197400",
+            "Timestamp": "2022-06-10T19:46:42+00:00"
+        }
+    ]
+}
+```
+
+You seem to just get the most recent price change, e.g. the above command was run more than 12 hours after the UTC values shown in the `Timestamp` fields. A price seems to be published at least once a day even if the price hasn't changed since the previous day.
+
+I'm surprised how little price variance there is for these spot instances. If you run the following command, you get the last two months of price updates:
+
+```
+$ aws ec2 describe-spot-price-history --product-descriptions='Linux/UNIX' --instance-types g4dn.xlarge
+```
+
+You can see the price is very consistently $0.1974, which was exactly 30% of the on-demand price of $0.658. Perhaps 30% is a lower-bound that AWS sets on spot prices, it never dips below this. And it only occasionally rises above this and only on one of the three availability zones - `eu-central-1c` - for my region - `eu-central-1`. I don't know if this reflects how AWS manages things when they finally do reach capacity across zones and that, however things are managed, the situation never arose that they started feeling enough capacity pressure that things spilled over into the `1a` and `1b` zones - but it is odd to see the `1a` and `1b` prices staying at $0.1974 while seeing them rise steeply in just `1c` (occasionally, to very near the on-demand price).
