@@ -332,3 +332,15 @@ for i in items:
 
 You can filter for something but there's no way to just say "return me the first item that matches the filter", the `Limit` parameter limits the number of items _before_ the filtering is applied!
 
+User-data default interpreter
+-----------------------------
+
+A little surprisingly, the default interpreter for user-data, when launching an instance, seems to be Python. So if you pass it e.g. a sequence of shell commands you end up with an error like this in `/var/log/cloud-init-output.log`
+
+```
+Jun 11 11:21:12 cloud-init[2401]: __init__.py[WARNING]: Unhandled non-multipart (text/x-not-multipart) userdata: 'aws s3 cp s3://render-jo...'
+```
+
+The important bit is `__init__.py` which gives you the clue that something Python related is trying to consume the user data.
+
+Actually, looking at the cloud-init [documentation](https://cloudinit.readthedocs.io/en/latest/topics/format.html#user-data-script), I think it assumes a multipart archive (and the `__init.py__` warning is coming from the cloud-init logic trying to consume this) and that if you want you data interpreted as a script then you must include a `#!`.

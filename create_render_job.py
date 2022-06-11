@@ -110,6 +110,7 @@ def main():
 
     logger.info(f"created DynamoDB table {db_name}")
 
+    print("Job creation completed successfully")
     sys.exit(0)
 
     # Launch spot fleet.

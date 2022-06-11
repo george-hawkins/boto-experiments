@@ -33,6 +33,7 @@ def main():
     group_name = name("log-group")
     stream_name = get_instance_id()
     logger = CloudWatchLogger(basics, group_name, stream_name)
+    logger.info("job started")
 
     bucket_name = name("bucket")
     bucket = basics.get_bucket(bucket_name)
