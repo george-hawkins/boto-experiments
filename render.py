@@ -1,23 +1,24 @@
-import subprocess
-import textwrap
 import os.path
 import glob
 
 # OPTIX actually seems to be slower than CUDA on the EC2 V100 cards.
 # And, just as odd, "CUDA+CPU" seems to be slower than just "CUDA" on its own.
+from blender import run_blender
+
 _CYCLES_DEVICE = "CUDA"
 
 
-def _get_python_expr(samples):
-    code = f"""
+def _get_python_expr(samples, motion_blur):
+    return f"""
         import bpy
         
-        bpy.context.scene.cycles.samples = {samples}
+        scene = bpy.context.scene
+        scene.cycles.samples = {samples}
+        scene.render.use_motion_blur = {motion_blur}
     """
-    return textwrap.dedent(code)
 
 
-def render_blend_file_frame(blender, input_file, samples, frame, output_prefix="frame-"):
+def render_blend_file_frame(blender, input_file, samples, motion_blur, frame, output_prefix="frame-"):
     if os.path.isabs(output_prefix):
         raise RuntimeError(f"absolute output prefixes are not supported - {output_prefix}")
 
@@ -29,17 +30,13 @@ def render_blend_file_frame(blender, input_file, samples, frame, output_prefix="
         # Frames, that were not deleted after being uploaded, have been left lying around.
         raise RuntimeError(f"frame(s) {existing} must be removed")
 
-    subprocess.run([
-        blender,
-        "--background",
-        input_file,
-        "--python-expr", _get_python_expr(samples),
+    run_blender(blender, input_file, _get_python_expr(samples, motion_blur), [
         "-E", "CYCLES",
         "-o", f"//{output_prefix}",
         "-f", str(frame),
         "--",
         "--cycles-device", _CYCLES_DEVICE
-    ], check=True)
+    ])
 
     output_file = get_output_files()
 

@@ -32,7 +32,7 @@ def main():
     user_data = Path("user_data").read_text()
     instance_count = 1
     security_group_name = "RenderJobWorkerSecurityGroup"
-    iam_instance_profile = "RenderJobWorkerProfile5"
+    iam_instance_profile = "RenderJobWorkerProfile"
 
     # TODO: name will be the same for all workers - so the best you can do is include the job-id.
     job_id = "66589e20-e257-4f3a-b9f8-3f7d7a82aadf"
@@ -72,6 +72,8 @@ def main():
                 break
 
         sleep(_POLLING_INTERVAL)
+
+    # TODO: cleanup once done.
 
 
 if __name__ == "__main__":

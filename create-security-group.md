@@ -1,7 +1,8 @@
 Security Group
---------------
+==============
 
-*TLDR;*
+TLDR;
+-----
 
 Find your default VPC:
 
@@ -30,7 +31,7 @@ $ aws ec2 create-security-group --group-name $name --description "$name created 
 
 It'll create this security group using your default VPC - if you `describe-security-groups` (see below), you'll see it as an attribute of the group.
 
-That's it. The rest of this page is just more details about creating default VPCs and security groups.
+That's it. The rest of this page just goes into more details about creating default VPCs and security groups.
 
 Create default VPC
 ------------------

@@ -17,15 +17,21 @@ def parse_args():
     parser.add_argument("--blender-home", default="blender", help="root directory of Blender installation")
     parser.add_argument("--samples", required=True, help="number of samples to render for each picture")
     parser.add_argument("--render-job-id", required=True, help="render job UUID")
+
+    motion_blur_parser = parser.add_mutually_exclusive_group(required=False)
+    motion_blur_parser.add_argument('--enable-motion-blur', dest='motion_blur', action='store_true')
+    motion_blur_parser.add_argument('--disable-motion-blur', dest='motion_blur', action='store_false')
+
     args = parser.parse_args()
 
     blender = f"{args.blender_home}/blender"
+    motion_blur = args.motion_blur if args.motion_blur is not None else True
 
-    return blender, args.samples, args.render_job_id
+    return blender, args.samples, motion_blur, args.render_job_id
 
 
 def main():
-    blender, samples, job_id = parse_args()
+    blender, samples, motion_blur, job_id = parse_args()
 
     def name(s):
         return f"render-job-{s}-{job_id}"
@@ -46,7 +52,7 @@ def main():
         if frame is None:
             break
         logger.info(f"rendering frame {frame}")
-        output_file = render_blend_file_frame(blender, PACKED_BLEND_FILE, samples, frame)
+        output_file = render_blend_file_frame(blender, PACKED_BLEND_FILE, samples, motion_blur, frame)
         basename = os.path.basename(output_file)
         s3_output_file = bucket.Object(f"frames/{basename}")
         s3_output_file.upload_file(output_file)

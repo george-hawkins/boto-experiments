@@ -1,3 +1,39 @@
+Role
+====
+
+TLDR;
+-----
+
+Create a policy (with the policy document [`render_job_worker_policy.json`](render_job_worker_policy.json)) and note the returned ARN:
+
+```
+$ aws iam create-policy --policy-name RenderJobWorkerPolicy --policy-document file://render_job_worker_policy.json --query 'Policy.Arn' --output text
+arn:aws:iam::585598036396:policy/RenderJobWorkerPolicy
+```
+
+Create a role (with the trust policy [`ec2-trust-policy.json`](ec2-trust-policy.json)) and attach the use the ARN of the just created policy to attach it to the role:
+
+```
+$ aws iam create-role --role-name RenderJobWorkerRole --assume-role-policy-document file://ec2-trust-policy.json
+$ aws iam attach-role-policy --role-name RenderJobWorkerRole --policy-arn arn:aws:iam::585598036396:policy/RenderJobWorkerPolicy
+```
+
+Note: while both are called policy documents, they describe different things - `ec2-trust-policy.json` describes who's involved and `render_job_worker_policy.json` describes what they can do.
+
+Finally, create a profile and add the role to it:
+
+```
+$ aws iam create-instance-profile --instance-profile-name RenderJobWorkerProfile
+$ aws iam add-role-to-instance-profile --role-name RenderJobWorkerRole --instance-profile-name RenderJobWorkerProfile
+```
+
+This profile can now be associated with EC2 instances.
+
+That's it. The rest of this page just more details about creating polies, roles and profiles; and covers associating a profile with a running EC2 instance.
+
+Create policy
+-------------
+
 First we create a policy document:
 
 ```
@@ -29,9 +65,10 @@ $ aws iam create-policy --policy-name RenderJobWorkerPolicy1 --policy-document f
 arn:aws:iam::585598036396:policy/RenderJobWorkerPolicy1
 ```
 
-If you create a role via the web dashboard, the first thing you're asked to do is to select the trusted entity involved. In this case, we want the trusted entity to be the AWS service EC2.
+Create role and profile
+-----------------------
 
-On the final step of creating a role (via the dashboard), you'd see a piece of JSON specifying the trusted entity. Here we create an identical piece of JSON as the first step:
+If you create a role via the web dashboard, the first thing you're asked to do is to select the trusted entity involved. In this case, we want the trusted entity to be the AWS service EC2. And on the final step of creating the role (via the dashboard), you'd see a piece of JSON specifying the trusted entity. Here we create an identical piece of JSON as our first step:
 
 ```
 $ cat > ec2-trust-policy.json << 'EOF'
@@ -60,7 +97,7 @@ Then we create a blank role for the entity specified by the JSON:
 
 Then we add the policy created up above to the role (there's no option to specify the policy using its name rather than its ARN):
 
-    $ aws iam attach-role-policy --role-name RenderJobWorkerRole1 --policy-arn 'arn:aws:iam::585598036396:policy/RenderJobWorkerPolicy1'
+    $ aws iam attach-role-policy --role-name RenderJobWorkerRole1 --policy-arn arn:aws:iam::585598036396:policy/RenderJobWorkerPolicy1
 
 Then finally, we need to create a profile and associate the role with the profile:
 
@@ -70,6 +107,9 @@ $ aws iam add-role-to-instance-profile --role-name RenderJobWorkerRole1 --instan
 ```
 
 Note: if you create roles via the dashboard then you never see profiles - a profile is silently created under-the-covers with the same name as the profile. And you're always given the impression that it's roles that are associated with EC2 instances but under-the-covers, it's really the identically named profile that's associated with instances.
+
+Associating a profile with a running EC2 instance
+-------------------------------------------------
 
 First, see if there are any associations that you might want to remove first:
 

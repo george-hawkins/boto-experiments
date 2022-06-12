@@ -224,6 +224,18 @@ Roles
 
 See [`create-role.md`](create-role.md).
 
+Security groups
+---------------
+
+See [`create-security-groups.md`](create-security-group.md)
+
+Python scripts with main
+------------------------
+
+* `create_render_job`
+* `render_job_worker`
+* `create_file_store` - run once and store result in xxx and upload a version of Blender there and store that also in xxx. 
+
 Power-off
 ---------
 
@@ -367,7 +379,7 @@ InstanceMarketOptions={
 
 So simply specifying `MarketType` is enough if you just want `one-time` behavior and are happy to pay the on-demand price in the worst case.
 
-The documentation doesn't say that `SpotInstanceType` defaults to `one-time` but you can see this is the case, if you e.g. just specify `MarketType=spot` and nothing else, and then look at the _Spot Requests_ in the EC2 dashboard - there you see "Persistence: one-time" and "Interruption behavior: terminate".
+The documentation doesn't say that `SpotInstanceType` defaults to `one-time` but you can see this is the case, if you e.g. just specify `MarketType=spot` and nothing else, and then look at the _Spot Requests_ in the EC2 dashboard - there you see "Persistence: one-time".
 
 Spot pricing
 ------------

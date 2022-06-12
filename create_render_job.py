@@ -32,7 +32,12 @@ def parse_args():
     parser.add_argument("--end", type=int, help="end frame (inclusive)")
     parser.add_argument("--step", type=int, help="step size from one frame to the next")
     parser.add_argument("--frames", help="comma separated list of frame numbers")
-    parser.add_argument("--samples", help="number of samples to render for each picture")
+    parser.add_argument("--samples", help="number of samples to render for each pixel")
+
+    motion_blur_parser = parser.add_mutually_exclusive_group(required=False)
+    motion_blur_parser.add_argument('--enable-motion-blur', default=None, dest='motion_blur', action='store_true')
+    motion_blur_parser.add_argument('--disable-motion-blur', default=None, dest='motion_blur', action='store_false')
+
     parser.add_argument("blend_file", help="the .blend file to be rendered")
     args = parser.parse_args()
 
@@ -44,7 +49,8 @@ def parse_args():
     samples = attrs["samples"] if args.samples is None else args.samples
 
     if args.frames is not None:
-        # There seems to be no easy way to express this exclusivity with `ArgumentParser`.
+        # There seems to be no way to express this exclusivity between _one_ argument and _multiple_ arguments
+        # with `ArgumentParser` (between one argument and another is possible, see `motion_blur` above).
         assert all(a is None for a in [args.start, args.end, args.step]), \
             "--frame cannot be used in combination with --start, --end or --step"
         frames = [int(s.strip()) for s in args.frames.split(',')]
@@ -60,7 +66,18 @@ def parse_args():
             step = args.step
         frames = range(start, end + 1, step)
 
-    return blender, blend_file, frames, samples
+    motion_blur = attrs["motion_blur"]
+
+    if args.motion_blur is not None:
+        motion_blur = args.motion_blur
+    elif not motion_blur:
+        # The assumption is that it's a mistake if motion blur isn't enabled.
+        sys.exit(
+            f"motion blur is disabled in {blend_file}, use --disable-motion-blur "
+            "to confirm this is OK or use --enable-motion-blur to enable it"
+        )
+
+    return blender, blend_file, frames, samples, motion_blur
 
 
 def frames_str(frames):
@@ -78,7 +95,7 @@ def main():
 
     print(f"Listen for log output with 'aws logs tail {group_name} --follow'")
 
-    blender, blend_file, frames, samples = parse_args()
+    blender, blend_file, frames, samples, motion_blur = parse_args()
 
     logger.info(f".blend file = {blend_file}, {frames_str(frames)} and samples = {samples}")
 
@@ -90,7 +107,8 @@ def main():
         content = template.safe_substitute(kwargs)
         Path(filename).write_text(content)
 
-    substitute(START_JOB, samples=samples, render_job_id=job_id)
+    motion_blur_condition = "enable" if motion_blur else "disable"
+    substitute(START_JOB, samples=samples, motion_blur_condition=motion_blur_condition, render_job_id=job_id)
     substitute(USER_DATA, render_job_id=job_id)
 
     pack_blend_file(blender, blend_file, PACKED_BLEND_FILE)

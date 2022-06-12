@@ -16,4 +16,4 @@ pip install --upgrade pip
 pip install boto3 'boto3-stubs[essential,logs]'
 
 # Start the job.
-python render_job_worker.py --samples $samples --render-job-id $render_job_id
+python render_job_worker.py --samples $samples --$motion_blur_condition-motion-blur --render-job-id $render_job_id
