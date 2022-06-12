@@ -7,13 +7,14 @@ from botocore.config import Config
 from timeit import default_timer as timer
 
 # boto3-stubs type annotations - https://mypy-boto3.readthedocs.io/en/latest/
-from mypy_boto3_dynamodb.type_defs import AttributeDefinitionTypeDef, KeySchemaElementTypeDef
+from mypy_boto3_ec2 import EC2Client
 from mypy_boto3_ec2.service_resource import EC2ServiceResource, Instance
-from mypy_boto3_ec2.client import EC2Client
+from mypy_boto3_s3 import S3Client
 from mypy_boto3_s3.service_resource import S3ServiceResource
-from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 from mypy_boto3_s3.type_defs import CreateBucketConfigurationTypeDef
-from mypy_boto3_logs.client import CloudWatchLogsClient
+from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
+from mypy_boto3_dynamodb.type_defs import AttributeDefinitionTypeDef, KeySchemaElementTypeDef
+from mypy_boto3_logs import CloudWatchLogsClient
 
 from ec2_metadata import is_aws, get_region
 
@@ -145,6 +146,9 @@ class BotoBasics:
         waiter = self._get_ec2_client().get_waiter("instance_exists")
         waiter.wait(InstanceIds=instance_id)
 
+    def terminate_instances(self, instance_ids):
+        self._get_ec2_client().terminate_instances(InstanceIds=instance_ids)
+
     # This returns simple dicts of name/value pairs whereas `create_instances` returns instances of `Instance`.
     def describe_instances(self, instance_ids) -> List[dict]:
         reservations = self._get_ec2_client().describe_instances(InstanceIds=instance_ids)["Reservations"]
@@ -163,6 +167,9 @@ class BotoBasics:
         self._s3_resource = self._get_or_create_resource(self._s3_resource, "s3")
         return self._s3_resource
 
+    def _get_s3_client(self) -> S3Client:
+        return self._get_s3_resource().meta.client
+
     def create_bucket(self, name):
         return self._get_s3_resource().create_bucket(Bucket=name, CreateBucketConfiguration=self._bucket_config)
 
@@ -170,9 +177,20 @@ class BotoBasics:
         return self._get_s3_resource().Bucket(name)
 
     # If you have large numbers of buckets then it would be much better to filter by tag (you can't filter by name).
-    # See https://stackoverflow.com/a/36044264/245602
+    # And/or use a paginator. See https://stackoverflow.com/a/36044264/245602
     def list_buckets(self):
         return self._get_s3_resource().buckets.all()
+
+    # Uses a paginator so it can handle even frame counts greater than 1000.
+    def list_objects(self, bucket_name, subdirectory=None) -> List[str]:
+        kwargs = {}
+        if subdirectory is not None:
+            kwargs["Prefix"] = subdirectory + "/"
+        paginator = self._get_s3_client().get_paginator("list_objects_v2")
+        iterator = paginator.paginate(Bucket=bucket_name, **kwargs)
+        # If there are no objects the iterator returns a single item that contains no "Contents" key.
+        contents = _flatten([i["Contents"] for i in iterator if "Contents" in i])
+        return [obj["Key"] for obj in contents]
 
     def _get_dynamodb_resource(self) -> DynamoDBServiceResource:
         self._dynamodb_resource = self._get_or_create_resource(self._dynamodb_resource, "dynamodb")

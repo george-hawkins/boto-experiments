@@ -6,5 +6,6 @@
     "cloud_watch_logger.py",
     "ec2_metadata.py",
     "frame_table.py",
+    "blender.py",
     "render.py"
 ]
