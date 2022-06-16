@@ -232,8 +232,8 @@ See [`create-security-groups.md`](create-security-group.md)
 Python scripts with main
 ------------------------
 
-* `create_render_job`
-* `render_job_worker`
+* `run_manager`
+* `run_worker`
 * `create_file_store` - run once and store result in xxx and upload a version of Blender there and store that also in xxx. 
 
 Power-off
@@ -309,6 +309,8 @@ To put further events, you have to use the `sequence-token` returned by the firs
 EC2 instance setup
 ------------------
 
+TODO: this is out-of-date - there is no `run_worker.ini` anymore.
+
 Make sure IAM role is attached before copying from S3.
 
 Download and unpack Blender:
@@ -325,11 +327,11 @@ Set up the virtual environment:
     $ pip install --upgrade pip
     $ pip install boto3 'boto3-stubs[essential,logs]'
 
-Make sure `render_job_worker.ini` contains the right job ID etc.
+Make sure `run_worker.ini` contains the right job ID etc.
 
 Start the job:
 
-    $ python render_job_worker.py
+    $ python run_worker.py
 
 DynamoDB
 --------

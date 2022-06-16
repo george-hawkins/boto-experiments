@@ -1,5 +1,5 @@
 import sys
-from typing import List
+from typing import List, Optional, Dict
 
 import boto3
 import botocore.session
@@ -17,6 +17,9 @@ from mypy_boto3_dynamodb.type_defs import AttributeDefinitionTypeDef, KeySchemaE
 from mypy_boto3_logs import CloudWatchLogsClient
 
 from ec2_metadata import is_aws, get_region
+
+# A tuple avoid the risk of users mutating the value.
+INSTANCE_STATES = ("pending", "running", "shutting-down", "stopped", "stopping", "terminated")
 
 
 # https://stackoverflow.com/a/952952/245602
@@ -150,8 +153,13 @@ class BotoBasics:
         self._get_ec2_client().terminate_instances(InstanceIds=instance_ids)
 
     # This returns simple dicts of name/value pairs whereas `create_instances` returns instances of `Instance`.
-    def describe_instances(self, instance_ids) -> List[dict]:
-        reservations = self._get_ec2_client().describe_instances(InstanceIds=instance_ids)["Reservations"]
+    def describe_instances(self, instance_ids=None, filters: Optional[Dict[str, list]] = None) -> List[dict]:
+        kwargs = {}
+        if instance_ids is not None:
+            kwargs["InstanceIds"] = instance_ids
+        if filters is not None:
+            kwargs["Filters"] = [{"Name": name, "Values": values} for name, values in filters.items()]
+        reservations = self._get_ec2_client().describe_instances(**kwargs)["Reservations"]
         return _flatten([reservation["Instances"] for reservation in reservations])
 
     # Much more light-weight than `describe_instances` - this just returns status information.
@@ -173,6 +181,12 @@ class BotoBasics:
     def create_bucket(self, name):
         return self._get_s3_resource().create_bucket(Bucket=name, CreateBucketConfiguration=self._bucket_config)
 
+    @staticmethod
+    def delete_bucket(bucket):
+        # You have to delete a bucket's contents before you can delete it.
+        bucket.objects.all().delete()
+        bucket.delete()
+
     def get_bucket(self, name):
         return self._get_s3_resource().Bucket(name)
 
@@ -181,7 +195,7 @@ class BotoBasics:
     def list_buckets(self):
         return self._get_s3_resource().buckets.all()
 
-    # Uses a paginator so it can handle even frame counts greater than 1000.
+    # Uses a paginator, so it can handle even frame counts greater than 1000.
     def list_objects(self, bucket_name, subdirectory=None) -> List[str]:
         kwargs = {}
         if subdirectory is not None:
@@ -232,7 +246,7 @@ class BotoBasics:
     def logs_exceptions(self):
         return self._get_logs_client().exceptions
 
-    def _create_log_entity(self, f, fail_if_exists=False):
+    def _create_log_entity(self, f, fail_if_exists):
         try:
             f()
         except self.logs_exceptions.ResourceAlreadyExistsException as e:

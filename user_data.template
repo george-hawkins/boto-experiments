@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # The initial PWD is /.
-home=/var/tmp/render_job
+home=/var/tmp/job_home
 mkdir $home
 cd $home
 
-aws s3 cp s3://render-job-bucket-$render_job_id . --recursive
+aws s3 cp s3://$bucket_name . --recursive
 chmod u+x start_job 
 ./start_job
 

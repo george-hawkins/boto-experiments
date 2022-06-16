@@ -1,11 +1,12 @@
 [
     "start_job",
     "packed.blend",
-    "render_job_worker.py",
+    "run_worker.py",
     "boto_basics.py",
     "cloud_watch_logger.py",
     "ec2_metadata.py",
-    "frame_table.py",
+    "frames_table.py",
     "blender.py",
-    "render.py"
+    "render.py",
+    "names.py"
 ]

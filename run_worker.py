@@ -4,7 +4,8 @@ import os
 from boto_basics import BotoBasics, get_s3_uri
 from cloud_watch_logger import CloudWatchLogger
 from ec2_metadata import get_instance_id
-from frame_table import FramesTable
+from frames_table import FramesTable
+from names import Names
 from render import render_blend_file_frame
 
 PACKED_BLEND_FILE = "packed.blend"
@@ -33,18 +34,17 @@ def parse_args():
 def main():
     blender, samples, motion_blur, job_id = parse_args()
 
-    def name(s):
-        return f"render-job-{s}-{job_id}"
+    names = Names(job_id)
 
-    group_name = name("log-group")
+    group_name = names.log_group
     stream_name = get_instance_id()
     logger = CloudWatchLogger(basics, group_name, stream_name)
     logger.info("job started")
 
-    bucket_name = name("bucket")
+    bucket_name = names.bucket
     bucket = basics.get_bucket(bucket_name)
 
-    db_name = name("dynamodb")
+    db_name = names.dynamodb
     frames_table = FramesTable(basics, db_name)
 
     while True:

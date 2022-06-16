@@ -1,7 +1,7 @@
 venv/
 .idea/
 __pycache__/
-frames/
+results/
 junk/
 packed.blend*
 start_job

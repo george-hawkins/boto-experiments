@@ -9,5 +9,3 @@ def get_config(config_filename):
     config = configparser.ConfigParser(os.environ, interpolation=configparser.ExtendedInterpolation())
     config.read(config_filename)
     return config["DEFAULT"]
-
-

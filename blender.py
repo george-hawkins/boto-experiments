@@ -36,5 +36,3 @@ def run_blender(
     ] + (additional_popenargs if additional_popenargs is not None else [])
     cwd = Path(input_file).parent  # Surprisingly, os.path.dirname("foo") return "" rather than "."
     return subprocess.run(popenargs, cwd=cwd, check=True, capture_output=capture_output, text=True)
-
-

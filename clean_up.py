@@ -1,9 +1,7 @@
 from boto_basics import BotoBasics
+from names import RENDER_JOB_PREFIX
 
 basics = BotoBasics()
-
-
-RENDER_JOB_PREFIX = "render-job-"
 
 
 def main():
@@ -14,8 +12,7 @@ def main():
 
     for bucket in basics.list_buckets():
         if bucket.name.startswith(RENDER_JOB_PREFIX):
-            bucket.objects.all().delete()
-            bucket.delete()
+            basics.delete_bucket(bucket)
             print(f"Deleted bucket {bucket.name}")
 
     for table in basics.list_tables():

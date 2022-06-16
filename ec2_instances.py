@@ -5,8 +5,6 @@ from boto_basics import BotoBasics
 from datetime import datetime, timezone
 from pathlib import Path
 
-from config import get_config
-from frame_table import FramesTable
 
 # It takes about 30s for a typical instance to start (go from "pending" to "running" and a similar amount of
 # time to go from "running" via "shutting-down" to "terminated"). So 15s seems a reasonable polling interval.
@@ -28,7 +26,7 @@ def _get_latest_image_id(image_name_pattern):
     return image["ImageId"]
 
 
-def _create_instances(
+def create_instances(
     instance_count,
     instance_name,
     image_name_pattern,
@@ -63,9 +61,9 @@ def _create_instances(
     return instance_ids
 
 
-# Monitor the instances, track their progress processing the frames and terminate them once completed.
-def _manage_instances(instance_ids, frames_table):
-    check_remaining = True
+# Monitor the instances, track their progress and terminate them once completed.
+def monitor_and_terminate(instance_ids, is_finished):
+    check_is_finished = True
     prev_states = {}
 
     while True:
@@ -81,78 +79,11 @@ def _manage_instances(instance_ids, frames_table):
                 print("All instances have been terminated")
                 break
 
-        if check_remaining and frames_table.get_remaining() == 0:
-            check_remaining = False
-            # At the end, some instances will be rendering frames that other workers have already completed.
-            # Terminate these instances rather than waiting for them to complete their now redundant work.
+        if check_is_finished and is_finished():
+            check_is_finished = False
+            # Aggressively terminate any instances that are not yet aware that ongoing work is redundant.
             running = [instance_id for instance_id, state in states.items() if state == "running"]
-            print(f"all frames have been rendered - terminating {len(running)} instances that are still running")
+            print(f"Terminating {len(running)} instances that are still running")
             basics.terminate_instances(running)
 
         sleep(_POLLING_INTERVAL)
-
-
-def _download_results(bucket, output_dir):
-    Path(output_dir).mkdir(exist_ok=True)
-
-    keys = basics.list_objects(bucket.name, "frames")
-    for key in keys:
-        obj = bucket.Object(key)
-        filename = key.split("/")[-1]
-        obj.download_file(f"{output_dir}/{filename}")
-        print(f"Downloaded {filename}")
-
-
-def _delete_resources():
-    # TODO: cleanup once done.
-    pass
-
-
-config = get_config("settings.ini")
-
-
-def main():
-    instance_count = config.getint("instance_count")
-    instance_type = config.get("instance_type")
-    image_name_pattern = config.get("image_name_pattern")
-    security_group_name = config.get("security_group_name")
-    iam_instance_profile = config.get("iam_instance_profile")
-
-    job_id = "bb9138ab-8e5b-4a84-94f5-132de68a010d"
-    user_data_filename = "user_data"
-    output_dir = f"frames-{job_id}"
-
-    # TODO: name will be the same for all workers - so the best you can do is include the job-id.
-    instance_name = f"render-worker-{job_id}"
-
-    def name(s):
-        return f"render-job-{s}-{job_id}"
-
-    db_name = name("dynamodb")
-    frames_table = FramesTable(basics, db_name)
-    bucket_name = name("bucket")
-    bucket = basics.get_bucket(bucket_name)
-
-    # ------------------------------------------------------------------
-
-    instance_ids = _create_instances(
-        instance_count,
-        instance_name,
-        image_name_pattern,
-        instance_type,
-        security_group_name,
-        iam_instance_profile,
-        user_data_filename
-    )
-
-    _manage_instances(instance_ids, frames_table)
-
-    print(f"Saving frames to {output_dir}")
-    _download_results(bucket, output_dir)
-
-    # TODO: maybe this should be called at the level above, i.e. the level at which `bucket` etc. were created.
-    _delete_resources()
-
-
-if __name__ == "__main__":
-    main()

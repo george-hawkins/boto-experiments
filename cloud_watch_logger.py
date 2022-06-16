@@ -14,8 +14,7 @@ class CloudWatchLogger:
         basics.create_log_group(group_name)
         basics.create_log_stream(group_name, stream_name)
 
-    # To tail these entries via the command line:
-    # $ aws logs tail <group-name> --follow
+    # To tail these entries, use 'aws logs tail <group-name> --follow'.
     def info(self, message):
         # datatime.utcnow() doesn't do what you might expect - https://stackoverflow.com/a/61049837/245602
         millis = int(datetime.now(timezone.utc).timestamp() * 1000)

@@ -1,13 +1,10 @@
 #!/bin/bash -e
 
-filestore='s3://file-store-dcede0e0-aec4-4920-9532-c89a3a151af2'
-blender='blender-3.1.2-linux-x64.tar.xz'
-
 # Download and unpack Blender.
-s3_file="$filestore/$blender"
+s3_file="$file_store/$blender_archive"
 aws s3 cp "$s3_file" .
 mkdir blender
-tar -xf "$blender" --strip-components=1 -C blender
+tar -xf $blender_archive --strip-components=1 -C blender
 
 # Create the Python setup.
 python3 -m venv venv
@@ -16,4 +13,4 @@ pip install --upgrade pip
 pip install boto3 'boto3-stubs[essential,logs]'
 
 # Start the job.
-python render_job_worker.py --samples $samples --$motion_blur_condition-motion-blur --render-job-id $render_job_id
+python run_worker.py --samples $samples --$motion_blur_condition-motion-blur --render-job-id $render_job_id
