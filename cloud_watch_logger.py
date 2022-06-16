@@ -1,6 +1,6 @@
 from boto_basics import BotoBasics
 from mypy_boto3_logs.type_defs import InputLogEventTypeDef
-from datetime import datetime, timezone
+from time import time
 
 
 class CloudWatchLogger:
@@ -16,8 +16,7 @@ class CloudWatchLogger:
 
     # To tail these entries, use 'aws logs tail <group-name> --follow'.
     def info(self, message):
-        # datatime.utcnow() doesn't do what you might expect - https://stackoverflow.com/a/61049837/245602
-        millis = int(datetime.now(timezone.utc).timestamp() * 1000)
+        millis = int(time() * 1000)
         event = InputLogEventTypeDef(timestamp=millis, message=message)
         retries = 0
         while retries <= self._MAX_RETRIES:

@@ -31,8 +31,8 @@ def _parse_args():
     parser.add_argument("--end", type=int, help="end frame (inclusive)")
     parser.add_argument("--step", type=int, help="step size from one frame to the next")
     parser.add_argument("--frames", help="comma separated list of frame numbers")
-    parser.add_argument("--samples", help="number of samples to render for each pixel")
-    parser.add_argument("--instance-count", help="number of EC2 instances to run")
+    parser.add_argument("--samples", type=int, help="number of samples to render for each pixel")
+    parser.add_argument("--ec2-instances", type=int, dest="instance_count", help="number of EC2 instances to run")
     parser.add_argument(
         "--disable-interactive", help="disable prompting for input",
         dest="interactive", default=True, action="store_false"
@@ -132,7 +132,7 @@ def get_settings() -> Settings:
 
 def frames_str(frames):
     if isinstance(frames, range):
-        s = f"frames = {frames.start} to {frames.stop + 1} inclusive"
+        s = f"frames = {frames.start} to {frames.stop - 1} inclusive"
         return s if frames.step == 1 else f"{s}, steps = {frames.step}"
     else:
         return f"frames = {frames}"

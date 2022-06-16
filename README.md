@@ -428,3 +428,29 @@ $ aws ec2 describe-spot-price-history --product-descriptions='Linux/UNIX' --inst
 ```
 
 You can see the price is very consistently $0.1974, which was exactly 30% of the on-demand price of $0.658. Perhaps 30% is a lower-bound that AWS sets on spot prices, it never dips below this. And it only occasionally rises above this and only on one of the three availability zones - `eu-central-1c` - for my region - `eu-central-1`. I don't know if this reflects how AWS manages things when they finally do reach capacity across zones and that, however things are managed, the situation never arose that they started feeling enough capacity pressure that things spilled over into the `1a` and `1b` zones - but it is odd to see the `1a` and `1b` prices staying at $0.1974 while seeing them rise steeply in just `1c` (occasionally, to very near the on-demand price).
+
+Public IP address
+-----------------
+
+Question: can I create the instance without any public IP at all?
+
+Answer: no - it needs an IP to access the internet - otherwise you'd have to set up some form of VPN (that does have a public IP) that can mediate between your instance and the public internet.
+
+If I got rid of the pip access, I could probably get rid of the public IP as I wouldn't need public internet access for anything else.
+
+Installing PyPi packages without internet
+-----------------------------------------
+
+See:
+
+* https://stackoverflow.com/questions/11091623/how-to-install-packages-offline
+* https://pip.pypa.io/en/stable/user_guide/#installing-from-local-packages
+* https://thilinamad.medium.com/install-python-packages-via-pip-without-an-internet-connection-b3dee83b4c2d
+
+Running jobs from the command line
+----------------------------------
+
+```
+$ source venv/bin/activate
+(venv) $ python run_manager.py --ec2-instances 8 --start=1 --end=16 --samples=64 --enable-motion-blur my-blender-file.blend
+```

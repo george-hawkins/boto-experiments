@@ -19,7 +19,7 @@ names = Names(job_id)
 def report_non_terminated():
     states = [s for s in INSTANCE_STATES if s != "terminated"]
     non_terminated = len(basics.describe_instances(filters={"instance-state-name": states}))
-    print(f"There are {non_terminated} instances still running")
+    print(f"There are {non_terminated} EC2 instances still running")
 
 
 def main():
@@ -51,8 +51,8 @@ def main():
         print("Deleted log group, bucket and table")
 
     print(
-        f".blend file = {settings.blend_file}, {frames_str(settings.frames)}, "
-        f"samples = {settings.samples} and motion_blur = {settings.motion_blur}"
+        f"instance count = {settings.instance_count}, .blend file = {settings.blend_file}, "
+        f"{frames_str(settings.frames)}, samples = {settings.samples} and motion_blur = {settings.motion_blur}"
     )
     if settings.interactive and input("Launch workers? [y/n] ") != "y":
         if input("Clean up? [Y/n] ") != "n":
@@ -68,7 +68,7 @@ def main():
         settings.iam_instance_profile,
         USER_DATA
     )
-    monitor_and_terminate(instance_ids, is_finished=lambda: table.get_remaining() == 0)
+    monitor_and_terminate(names.log_group, instance_ids, is_finished=lambda: table.get_remaining() == 0)
 
     download_results(basics, job_id, bucket, "frames")
     clean_up()

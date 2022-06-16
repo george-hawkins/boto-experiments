@@ -283,3 +283,9 @@ class BotoBasics:
             logEvents=[log_event],
             **kwargs
         )["nextSequenceToken"]
+
+    def filter_log_events(self, group_name, start_time, next_token=None):
+        kwargs = {}
+        if next_token is not None:
+            kwargs["nextToken"] = next_token
+        return self._get_logs_client().filter_log_events(logGroupName=group_name, startTime=start_time, **kwargs)

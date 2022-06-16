@@ -5,10 +5,11 @@ from boto_basics import BotoBasics
 from datetime import datetime, timezone
 from pathlib import Path
 
+from log_retriever import LogsRetriever
 
 # It takes about 30s for a typical instance to start (go from "pending" to "running" and a similar amount of
-# time to go from "running" via "shutting-down" to "terminated"). So 15s seems a reasonable polling interval.
-_POLLING_INTERVAL = 15
+# time to go from "running" via "shutting-down" to "terminated"). So 10s seems a reasonable polling interval.
+_POLLING_INTERVAL = 10
 
 basics = BotoBasics()
 
@@ -39,12 +40,6 @@ def create_instances(
 
     user_data = Path(user_data_filename).read_text()
 
-    # TODO: can I create the instance without any public IP at all?
-    # Answer: no - it needs an IP to access the internet - otherwise you'd have to set up some form of VPN
-    # (that does have a public IP) that can mediate between your instance and the public internet.
-    # So if I got rid of the pip access I could probably get rid of the public IP as I wouldn't need public
-    # internet access for anything else.
-
     instances = basics.create_instances(
         name=instance_name,
         image_id=image_id,
@@ -62,11 +57,14 @@ def create_instances(
 
 
 # Monitor the instances, track their progress and terminate them once completed.
-def monitor_and_terminate(instance_ids, is_finished):
+def monitor_and_terminate(group_name, instance_ids, is_finished):
+    retriever = LogsRetriever()
+
     check_is_finished = True
     prev_states = {}
 
     while True:
+        # Check if all instances have terminated - if so exit the loop.
         descriptions = basics.describe_instances(instance_ids)
         states = {description["InstanceId"]: description["State"]["Name"] for description in descriptions}
         if states != prev_states:
@@ -79,11 +77,18 @@ def monitor_and_terminate(instance_ids, is_finished):
                 print("All instances have been terminated")
                 break
 
+        # Check if the job is finished - if so initiate the termination of still running instances.
         if check_is_finished and is_finished():
             check_is_finished = False
             # Aggressively terminate any instances that are not yet aware that ongoing work is redundant.
             running = [instance_id for instance_id, state in states.items() if state == "running"]
             print(f"Terminating {len(running)} instances that are still running")
             basics.terminate_instances(running)
+
+        # Poll for log events from the workers.
+        log_events = retriever.get_log_events(basics, group_name)
+        for event in log_events:
+            local_datetime = retriever.to_local_datetime_str(event['timestamp'])
+            print(f"{local_datetime} {event['logStreamName']} {event['message']}")
 
         sleep(_POLLING_INTERVAL)
