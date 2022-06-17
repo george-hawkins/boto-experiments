@@ -6,20 +6,19 @@ from pathlib import Path
 _INSTANCE_DATA = "/run/cloud-init/instance-data.json"
 
 # Use to provide canned values when running locally.
-_CANNED_INSTANCE_DATA = "canned-instance-data.json"
+_CANNED_INSTANCE_DATA = {
+    "instance-id": "i-0c146a607fb0a8e64",
+    "region": "eu-central-1"
+}
 
 
 def is_aws():
     return isfile(_INSTANCE_DATA)
 
 
-def _get_instance_data():
-    return _INSTANCE_DATA if is_aws() else _CANNED_INSTANCE_DATA
-
-
 # See https://cloudinit.readthedocs.io/en/latest/topics/instancedata.html
 def _get_ec2_v1_metadata():
-    return json.loads(Path(_get_instance_data()).read_text())["v1"]
+    return json.loads(Path(_INSTANCE_DATA ).read_text())["v1"] if is_aws() else _CANNED_INSTANCE_DATA
 
 
 def get_instance_id():
