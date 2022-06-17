@@ -2,13 +2,13 @@ import sys
 from uuid import uuid4
 
 from boto_basics import BotoBasics, INSTANCE_STATES
-from job_steps import create_worker_files, upload_worker_files, create_db_table, download_results, USER_DATA
 from ec2_instances import create_instances, monitor_and_terminate
+from job_steps import create_worker_files, upload_worker_files, create_db_table, download_results, USER_DATA
 from names import Names
 from pack import pack_blend_file
 from settings import frames_str, get_settings
 
-_PACKED_BLEND_FILE = "packed.blend"
+PACKED_BLEND_FILE = "packed.blend"
 
 basics = BotoBasics()
 job_id = uuid4()
@@ -17,7 +17,8 @@ names = Names(job_id)
 
 # Check for running instances, irrespective of whether they're related to this job.
 def report_non_terminated():
-    states = [s for s in INSTANCE_STATES if s != "terminated"]
+    states = list(INSTANCE_STATES)
+    states.remove("terminated")
     non_terminated = len(basics.describe_instances(filters={"instance-state-name": states}))
     print(f"There are {non_terminated} EC2 instances still running")
 
@@ -26,7 +27,9 @@ def main():
     settings = get_settings()
 
     basics.create_log_group(names.log_group)
-    print(f"Listen for log output with 'aws logs tail {names.log_group} --follow'")
+    print(f"Created log group {names.log_group}")
+    # Log output is tailed elsewhere by `LogsRetriever` but you can also tail it with:
+    # $ aws logs tail <log-group-name> --follow'
 
     create_worker_files(
         job_id,
@@ -37,7 +40,7 @@ def main():
         settings.motion_blur
     )
 
-    pack_blend_file(settings.blender, settings.blend_file, _PACKED_BLEND_FILE)
+    pack_blend_file(settings.blender, settings.blend_file, PACKED_BLEND_FILE)
 
     bucket = basics.create_bucket(names.bucket)
     upload_worker_files(bucket)

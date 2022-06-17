@@ -18,7 +18,7 @@ from mypy_boto3_logs import CloudWatchLogsClient
 
 from ec2_metadata import is_aws, get_region
 
-# A tuple avoid the risk of users mutating the value.
+# A tuple avoids the risk of users mutating the value.
 INSTANCE_STATES = ("pending", "running", "shutting-down", "stopped", "stopping", "terminated")
 
 

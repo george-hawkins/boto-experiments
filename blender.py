@@ -1,4 +1,5 @@
 import subprocess
+import sys
 import textwrap
 import json
 import re
@@ -18,6 +19,7 @@ def recover_dict(completed: subprocess.CompletedProcess):
     return json.loads(json_str)
 
 
+# `capture_output` can also be used as a semi-silent mode - output will only be printed if CalledProcessError occurs.
 def run_blender(
     blender,
     input_file,
@@ -34,5 +36,11 @@ def run_blender(
         input_file,
         "--python-expr", python_code
     ] + (additional_popenargs if additional_popenargs is not None else [])
-    cwd = Path(input_file).parent  # Surprisingly, os.path.dirname("foo") return "" rather than "."
-    return subprocess.run(popenargs, cwd=cwd, check=True, capture_output=capture_output, text=True)
+    cwd = Path(input_file).parent  # Surprisingly, os.path.dirname("foo") returns "" rather than "."
+    try:
+        return subprocess.run(popenargs, cwd=cwd, check=True, capture_output=capture_output, text=True)
+    except subprocess.CalledProcessError as e:
+        if capture_output:
+            print(e.stdout)
+            print(e.stderr, file=sys.stderr)
+        raise e

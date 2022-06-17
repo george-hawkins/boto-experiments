@@ -19,4 +19,5 @@ def pack_blend_file(blender, input_file, output_file):
             # Force Blender to exit with a non-zero exit code.
             sys.exit(1)
     """
-    run_blender(blender, input_file, code)
+    # Output is just captured to silence it (but it's printed if an error occurs).
+    run_blender(blender, input_file, code, capture_output=True)
