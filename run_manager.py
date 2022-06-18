@@ -3,7 +3,8 @@ from uuid import uuid4
 
 from boto_basics import BotoBasics, INSTANCE_STATES
 from ec2_instances import create_instances, monitor_and_terminate
-from job_steps import create_worker_files, upload_worker_files, create_db_table, download_results, USER_DATA
+from job_steps import create_worker_files, upload_worker_files, create_db_table, download_results, USER_DATA, \
+    delete_temporary_files
 from names import Names
 from pack import pack_blend_file
 from settings import frames_str, get_settings
@@ -52,6 +53,7 @@ def main():
         basics.delete_bucket(bucket)
         table.delete()
         print("Deleted log group, bucket and table")
+        delete_temporary_files()
 
     print(
         f"instance count = {settings.instance_count}, .blend file = {settings.blend_file}, "

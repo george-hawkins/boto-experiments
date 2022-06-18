@@ -1,8 +1,4 @@
-venv/
 .idea/
+venv/
 __pycache__/
 results/
-junk/
-packed.blend*
-start_job
-user_data

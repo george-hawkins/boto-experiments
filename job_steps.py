@@ -10,18 +10,20 @@ from frames_table import FramesTable
 USER_DATA = "user_data"
 
 _START_JOB = "start_job"
-_WORKER_FILES = "worker_files.json"
+_WORKER_FILES = "json_files/worker_files.json"
+_TEMPORARY_FILES = "json_files/temporary_files.json"
+
+
+def _substitute(filename, **kwargs):
+    template = Template(Path(f"templates/{filename}").read_text())
+    # With `safe_substitution`, you don't have to escape things starting with '$' that aren't being replaced.
+    content = template.safe_substitute(kwargs)
+    Path(filename).write_text(content)
 
 
 def create_worker_files(job_id, bucket_name, file_store, blender_archive, samples, motion_blur):
-    def substitute(filename, **kwargs):
-        template = Template(Path(f"{filename}.template").read_text())
-        # With `safe_substitution`, you don't have to escape things starting with '$' that aren't being replaced.
-        content = template.safe_substitute(kwargs)
-        Path(filename).write_text(content)
-
     motion_blur_condition = "enable" if motion_blur else "disable"
-    substitute(
+    _substitute(
         _START_JOB,
         file_store=file_store,
         blender_archive=blender_archive,
@@ -29,7 +31,14 @@ def create_worker_files(job_id, bucket_name, file_store, blender_archive, sample
         motion_blur_condition=motion_blur_condition,
         render_job_id=job_id
     )
-    substitute(USER_DATA, bucket_name=bucket_name)
+    _substitute(USER_DATA, bucket_name=bucket_name)
+
+
+def delete_temporary_files():
+    filenames = json.loads(Path(_TEMPORARY_FILES).read_text())
+    for filename in filenames:
+        Path(filename).unlink(missing_ok=True)
+    print("Deleted temporary files")
 
 
 def upload_worker_files(bucket: Bucket):

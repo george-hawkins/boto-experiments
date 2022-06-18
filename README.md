@@ -91,13 +91,13 @@ So, in the AWS web console, go to _IAM / Roles_. Click the _Create Role_ button,
 
 Click _Create Policy_, in the end it does seem easier to use the _JSON_ tab rather than the _Visual Editor_ tab. But let's give it a try.
 
-![img.png](visual-editor.png)
+![img.png](docs/images/visual-editor.png)
 
 First, choose a service, i.e. S3. Then in _Actions_, expand _List_ and tick _ListBucket_.
 
 The _Manual actions_ section is a bit confusing initially, click _add actions_ and enter:
 
-![img.png](wildcard-action.png)
+![img.png](docs/images/wildcard-action.png)
 
 This is a quick alternative to going through the _Read_, _Write_ etc. sections and ticking all the actions ending with "Object" - these are the ones you need if you want to read, write and delete objects.
 
@@ -222,12 +222,12 @@ Get latest version of AMI
 Roles
 -----
 
-See [`create-role.md`](create-role.md).
+See [`create-role.md`](docs/create-role.md).
 
 Security groups
 ---------------
 
-See [`create-security-groups.md`](create-security-group.md)
+See [`create-security-groups.md`](docs/create-security-group.md)
 
 Python scripts with main
 ------------------------
@@ -235,6 +235,7 @@ Python scripts with main
 * `run_manager`
 * `run_worker`
 * `create_file_store` - run once and store result in xxx and upload a version of Blender there and store that also in xxx. 
+* `clean_up.py`
 
 Power-off
 ---------

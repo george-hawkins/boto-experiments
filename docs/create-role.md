@@ -4,14 +4,14 @@ Role
 TLDR;
 -----
 
-Create a policy (with the policy document [`render_job_worker_policy.json`](render_job_worker_policy.json)) and note the returned ARN:
+Create a policy (with the policy document [`render_job_worker_policy.json`](../policies/render_job_worker_policy.json)) and note the returned ARN:
 
 ```
-$ aws iam create-policy --policy-name RenderJobWorkerPolicy --policy-document file://render_job_worker_policy.json --query 'Policy.Arn' --output text
+$ aws iam create-policy --policy-name RenderJobWorkerPolicy --policy-document file://policies/render_job_worker_policy.json --query 'Policy.Arn' --output text
 arn:aws:iam::585598036396:policy/RenderJobWorkerPolicy
 ```
 
-Create a role (with the trust policy [`ec2-trust-policy.json`](ec2-trust-policy.json)) and attach the use the ARN of the just created policy to attach it to the role:
+Create a role (with the trust policy [`ec2-trust-policy.json`](../policies/ec2-trust-policy.json)) and attach the use the ARN of the just created policy to attach it to the role:
 
 ```
 $ aws iam create-role --role-name RenderJobWorkerRole --assume-role-policy-document file://ec2-trust-policy.json
@@ -37,7 +37,8 @@ Create policy
 First we create a policy document:
 
 ```
-$ cat > render_job_worker_policy.json << 'EOF'
+$ mkdir policies
+$ cat > policies/render_job_worker_policy.json << 'EOF'
 {
     "Version": "2012-10-17",
     "Statement": [
@@ -61,7 +62,7 @@ EOF
 And create a policy from this JSON file:
 
 ```
-$ aws iam create-policy --policy-name RenderJobWorkerPolicy1 --policy-document file://render_job_worker_policy.json --query 'Policy.Arn' --output text
+$ aws iam create-policy --policy-name RenderJobWorkerPolicy1 --policy-document file://policies/render_job_worker_policy.json --query 'Policy.Arn' --output text
 arn:aws:iam::585598036396:policy/RenderJobWorkerPolicy1
 ```
 
@@ -71,7 +72,7 @@ Create role and profile
 If you create a role via the web dashboard, the first thing you're asked to do is to select the trusted entity involved. In this case, we want the trusted entity to be the AWS service EC2. And on the final step of creating the role (via the dashboard), you'd see a piece of JSON specifying the trusted entity. Here we create an identical piece of JSON as our first step:
 
 ```
-$ cat > ec2-trust-policy.json << 'EOF'
+$ cat > policies/ec2-trust-policy.json << 'EOF'
 {
     "Version": "2012-10-17",
     "Statement": [
@@ -93,7 +94,7 @@ EOF
 
 Then we create a blank role for the entity specified by the JSON:
 
-    $ aws iam create-role --role-name RenderJobWorkerRole1 --assume-role-policy-document file://ec2-trust-policy.json
+    $ aws iam create-role --role-name RenderJobWorkerRole1 --assume-role-policy-document file://policies/ec2-trust-policy.json
 
 Then we add the policy created up above to the role (there's no option to specify the policy using its name rather than its ARN):
 
