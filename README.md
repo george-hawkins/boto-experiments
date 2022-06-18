@@ -3,6 +3,8 @@ Boto3 renderer
 
 Render [Blender](https://www.blender.org/) animations (using Cycles) on AWS.
 
+The following assumes some familiarity with AWS - see my [notes elsewhere](https://github.com/george-hawkins/aws-notes) on getting started with AWS.
+
 Running jobs from the command line
 ----------------------------------
 
@@ -59,4 +61,9 @@ TODO: fill-in.
 Spot pricing
 ------------
 
-Point to notes.
+Point to section in https://github.com/george-hawkins/aws-notes / more-aws-notes.md
+
+Notes
+-----
+
+See [`boto3-notes.md`](docs/boto3-notes.md).

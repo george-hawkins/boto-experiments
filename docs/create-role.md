@@ -14,7 +14,7 @@ arn:aws:iam::585598036396:policy/RenderJobWorkerPolicy
 Create a role (with the trust policy [`ec2-trust-policy.json`](../policies/ec2-trust-policy.json)) and attach the use the ARN of the just created policy to attach it to the role:
 
 ```
-$ aws iam create-role --role-name RenderJobWorkerRole --assume-role-policy-document file://ec2-trust-policy.json
+$ aws iam create-role --role-name RenderJobWorkerRole --assume-role-policy-document file://policies/ec2-trust-policy.json
 $ aws iam attach-role-policy --role-name RenderJobWorkerRole --policy-arn arn:aws:iam::585598036396:policy/RenderJobWorkerPolicy
 ```
 
