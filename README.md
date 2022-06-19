@@ -318,3 +318,8 @@ See also:
 
 * [`boto3-notes.md`](docs/boto3-notes.md).
 * [`public-ip-address.md`](docs/public-ip-address.md)
+
+TODO
+----
+
+The policy specified in [`policies/render_job_worker_policy.json`](policies/render_job_worker_policy.json) could be made much tighter and restricted to a far narrower range of actions.

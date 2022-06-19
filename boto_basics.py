@@ -46,9 +46,9 @@ def create_attribute_definition(name, attr_type):
 # These "s3://..." URIs just seem to be an aws-cli thing - they're not used in boto.
 def get_s3_uri(item):
     name = type(item).__name__
-    if name == 's3.Bucket':
+    if name == "s3.Bucket":
         return f"s3://{item.name}"
-    elif name == 's3.Object':
+    elif name == "s3.Object":
         return f"s3://{item.bucket_name}/{item.key}"
     else:
         raise RuntimeError(f"unexpected type {type(item)}")
@@ -80,9 +80,6 @@ class BotoBasics:
         region = botocore_session.get_config_variable("region")
 
         if region is None:
-            if not is_aws():
-                sys.exit("cannot determine region")
-
             botocore_session.set_config_variable("region", get_region())
 
     def _get_or_create_client(self, field, name):
@@ -127,7 +124,7 @@ class BotoBasics:
             kwargs["UserData"] = user_data
 
         # Set the tag that's shown as the instance name in the EC2 dashboard.
-        name_tag = {'ResourceType': 'instance', 'Tags': [{'Key': 'Name', 'Value': name}]}
+        name_tag = {"ResourceType": "instance", "Tags": [{"Key": "Name", "Value": name}]}
 
         # noinspection PyTypeChecker
         return self._get_ec2_resource().create_instances(

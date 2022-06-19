@@ -10,11 +10,12 @@ def pack_blend_file(blender, input_file, output_file):
         import sys
         import traceback
         import bpy
-        
+
         try:
             bpy.ops.file.pack_all()
             bpy.ops.wm.save_as_mainfile(filepath="{output_file}", compress=True, copy=True)
         except Exception:
+            # An exception typically occurs if Blender can't find a referenced texture etc.
             traceback.print_exc()
             # Force Blender to exit with a non-zero exit code.
             sys.exit(1)

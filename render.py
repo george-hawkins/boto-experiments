@@ -11,7 +11,7 @@ _CYCLES_DEVICE = "CUDA"
 def _get_python_expr(samples, motion_blur):
     return f"""
         import bpy
-        
+
         scene = bpy.context.scene
         scene.cycles.samples = {samples}
         scene.render.use_motion_blur = {motion_blur}

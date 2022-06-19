@@ -20,8 +20,8 @@ def parse_args():
     parser.add_argument("--render-job-id", required=True, help="render job UUID")
 
     motion_blur_parser = parser.add_mutually_exclusive_group(required=False)
-    motion_blur_parser.add_argument('--enable-motion-blur', dest='motion_blur', action='store_true')
-    motion_blur_parser.add_argument('--disable-motion-blur', dest='motion_blur', action='store_false')
+    motion_blur_parser.add_argument("--enable-motion-blur", dest="motion_blur", action="store_true")
+    motion_blur_parser.add_argument("--disable-motion-blur", dest="motion_blur", action="store_false")
 
     args = parser.parse_args()
 

@@ -43,7 +43,7 @@ class FramesTable:
             self._table.update_item(
                 Key={"filler": 0, "frame": num},
                 UpdateExpression="ADD in_progress :one",
-                ConditionExpression=f"in_progress = :current",
+                ConditionExpression="in_progress = :current",
                 ExpressionAttributeValues={":one": 1, ":current": current}
             )
             return True

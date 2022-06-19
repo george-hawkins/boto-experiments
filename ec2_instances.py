@@ -88,7 +88,7 @@ def monitor_and_terminate(group_name, instance_ids, is_finished):
         # Poll for log events from the workers.
         log_events = retriever.get_log_events(basics, group_name)
         for event in log_events:
-            local_datetime = retriever.to_local_datetime_str(event['timestamp'])
+            local_datetime = retriever.to_local_datetime_str(event["timestamp"])
             print(f"{local_datetime} {event['logStreamName']} {event['message']}")
 
         sleep(_POLLING_INTERVAL)

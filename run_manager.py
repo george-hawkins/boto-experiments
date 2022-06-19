@@ -3,8 +3,14 @@ from uuid import uuid4
 
 from boto_basics import BotoBasics, INSTANCE_STATES
 from ec2_instances import create_instances, monitor_and_terminate
-from job_steps import create_worker_files, upload_worker_files, create_db_table, download_results, USER_DATA, \
-    delete_temporary_files
+from job_steps import (
+    create_worker_files,
+    upload_worker_files,
+    create_db_table,
+    download_results,
+    USER_DATA,
+    delete_temporary_files,
+)
 from names import Names
 from pack import pack_blend_file
 from settings import frames_str, get_settings
