@@ -349,3 +349,35 @@ TODO
 ----
 
 The policy specified in [`policies/render_job_worker_policy.json`](policies/render_job_worker_policy.json) could be made much tighter and restricted to a far narrower range of actions.
+
+Determining which actions Boto3 actually uses is easy. Add the following lines to the top of `run_worker.py`:
+
+```
+import logging
+logging.basicConfig(filename="actions.log")
+hooks_logger = logging.getLogger("botocore.hooks")
+hooks_logger.setLevel(logging.DEBUG)
+```
+
+Then run `run_worker.py` locally as described above. Once it's completed and logged the relevant information to `actions.log`, the actions used can be extracted like so:
+
+```
+(venv) $ sed -n 's/.*Event request.created.\([^:]*\).*/\1/p' actions.log | sort -u
+cloudwatch-logs.CreateLogGroup
+cloudwatch-logs.CreateLogStream
+cloudwatch-logs.PutLogEvents
+dynamodb.DeleteItem
+dynamodb.Scan
+dynamodb.UpdateItem
+s3.PutObject
+```
+
+As can be seen, very few actions are actually used.
+
+It might also be possible to restrict what resources can be accessed (instead of using `*` as is done at the moment).
+
+Note: there are also a couple of actions, that are not captured by the above, that are needed to support the AWS CLI usage in the `user_data` and `start_job` scripts.
+
+---
+
+Also, at the moment if the `run_worker.py` script fails with an exception, this will be invisible (except for the fact that the instance then powers off). Wrapping the main function with a `try:` and logging any exception to CloudWatch logs would be a good idea.
