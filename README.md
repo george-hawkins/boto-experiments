@@ -95,7 +95,7 @@ Note: the stubs won't pull in `boto3` as a dependency - you have to install both
 
 Now, you just need to set up a file store and the necessary role profile to be used by the EC2 instances.
 
-File-store setup
+File store setup
 ----------------
 
 The EC2 instances need to download an archive containing Blender at startup so, they can render the frames of the animation. This archive is about 170MiB and it is far quicker to download it from within AWS than to pull it each time from the public internet.
@@ -119,6 +119,28 @@ $ aws s3 cp ~/Downloads/blender-3.2.0-linux-x64.tar.xz s3://file-store-80b34aec-
 Then edit [`settings.ini`](settings.ini) and use the file store bucket name as the value for `file_store` and the Blender archive name as the `blender_archive` value.
 
 That's it - storing the Blender archive permanently like this costs almost nothing - the cost per GiB per year is about $0.30.
+
+### Updating Blender on the file store
+
+Later, if you download a newer version of Blender, you can update it on the file store as follows.
+
+Determine the file store S3 URI and delete the current archive there:
+
+```
+$ fgrep file_store: settings.ini
+file_store: s3://file-store-dcede0e0-aec4-4920-9532-c89a3a151af2
+$ aws s3 ls s3://file-store-dcede0e0-aec4-4920-9532-c89a3a151af2
+2022-06-04 17:50:32  187294308 blender-3.1.2-linux-x64.tar.xz
+$ aws s3 rm s3://file-store-dcede0e0-aec4-4920-9532-c89a3a151af2/blender-3.1.2-linux-x64.tar.xz
+```
+
+Copy the new archive to the file store bucket:
+
+```
+$ aws s3 cp ~/Downloads/blender-3.2.0-linux-x64.tar.xz s3://file-store-dcede0e0-aec4-4920-9532-c89a3a151af2
+```
+
+Then edit `settings.ini` and change the value of `blender_archive` to match the name of the just uploaded archive.
 
 Role and security group
 -----------------------
