@@ -42,6 +42,7 @@ def main():
     )
 
     pack_blend_file(settings.blender, settings.blend_file, PACKED_BLEND_FILE)
+    print("Packed the .blend file")
 
     bucket = basics.create_bucket(names.bucket)
     upload_worker_files(bucket)

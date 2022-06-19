@@ -1,5 +1,7 @@
-Role
-====
+IAM Role
+========
+
+EC2 instances need a [role and profile](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html) in order to interact with other AWS resources such as S3 buckets.
 
 TLDR;
 -----
@@ -29,7 +31,7 @@ $ aws iam add-role-to-instance-profile --role-name RenderJobWorkerRole --instanc
 
 This profile can now be associated with EC2 instances.
 
-That's it. The rest of this page just more details about creating polies, roles and profiles; and covers associating a profile with a running EC2 instance.
+That's it. The rest of this page just goes into more detail about creating polies, roles and profiles; and covers associating a profile with a running EC2 instance.
 
 Create policy
 -------------

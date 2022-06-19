@@ -1,5 +1,7 @@
-Security Group
-==============
+EC2 Security Group
+==================
+
+EC2 instances need a [security group](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-security-groups.html) that controls what incoming and outgoing traffic is allowed.
 
 TLDR;
 -----
@@ -7,14 +9,14 @@ TLDR;
 Find your default VPC:
 
 ```
-$ aws --region us-east-1 ec2 describe-vpcs --filters 'Name=is-default,Values=true' --query 'Vpcs[0].VpcId' --output text
+$ aws ec2 describe-vpcs --filters 'Name=is-default,Values=true' --query 'Vpcs[0].VpcId' --output text
 None
 ```
 
 If it says `None` then create one:
 
 ```
-$ aws --region us-east-1 ec2 create-default-vpc --query 'Vpc.VpcId' --output text
+$ aws ec2 create-default-vpc --query 'Vpc.VpcId' --output text
 vpc-080daca15075a1dba
 ```
 
