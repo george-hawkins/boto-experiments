@@ -33,7 +33,7 @@ $ aws ec2 create-security-group --group-name $name --description "$name created 
 
 It'll create this security group using your default VPC - if you `describe-security-groups` (see below), you'll see it as an attribute of the group.
 
-That's it. The rest of this page just goes into more details about creating default VPCs and security groups.
+That's it. The rest of this page just goes into more details about creating default VPCs and security groups. And it describes how you can attach a rule to allow incoming traffic.
 
 Create default VPC
 ------------------

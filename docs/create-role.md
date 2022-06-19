@@ -13,7 +13,7 @@ $ aws iam create-policy --policy-name RenderJobWorkerPolicy --policy-document fi
 arn:aws:iam::585598036396:policy/RenderJobWorkerPolicy
 ```
 
-Create a role (with the trust policy [`ec2-trust-policy.json`](../policies/ec2-trust-policy.json)) and attach the use the ARN of the just created policy to attach it to the role:
+Create a role (with the trust policy [`ec2-trust-policy.json`](../policies/ec2-trust-policy.json)) and use the ARN of the just created policy to attach it to the role:
 
 ```
 $ aws iam create-role --role-name RenderJobWorkerRole --assume-role-policy-document file://policies/ec2-trust-policy.json
@@ -31,7 +31,7 @@ $ aws iam add-role-to-instance-profile --role-name RenderJobWorkerRole --instanc
 
 This profile can now be associated with EC2 instances.
 
-That's it. The rest of this page just goes into more detail about creating polies, roles and profiles; and covers associating a profile with a running EC2 instance.
+That's it. The rest of this page just goes into more detail about creating policies, roles and profiles; and covers associating a profile with a running EC2 instance.
 
 Create policy
 -------------

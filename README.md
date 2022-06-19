@@ -3,15 +3,15 @@ Boto3 renderer
 
 Render [Blender](https://www.blender.org/) animations (using Cycles) on AWS spot instances.
 
-The following assumes some familiarity with AWS, that you've already got an AWS account and have the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/) set up. See my [notes](https://github.com/george-hawkins/aws-notes) elsewhere on getting started with AWS.
+The following assumes some familiarity with AWS, that you already have an AWS account and have the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/) set up. See my [notes](https://github.com/george-hawkins/aws-notes) elsewhere on getting started with AWS.
 
 Running render jobs from the command line
 -----------------------------------------
 
-The following command will start eight EC2 spot instances to render frames 1 to 120 with 512 samples.
+The following command will start eight EC2 spot instances to render frames 1 to 120 of `foo.blend` using 512 samples:
 
 ```
-(venv) $ python run_manager.py --ec2-instances 8 --start=1 --end=120 --samples=512 my-blender-file.blend
+(venv) $ python run_manager.py --ec2-instances 8 --start=1 --end=120 --samples=512 foo.blend
 ```
 
 The `.blend` file is automatically packed to ensure that all referenced resources (textures etc.) are also included. The type of instance, e.g. a `g4dn.xlarge` (with an Nvidia [T4 GPU](https://www.nvidia.com/en-us/data-center/tesla-t4/)), is configured in the [`settings.ini`](settings.ini) file.
@@ -25,13 +25,13 @@ $ source venv/bin/activate
 Command line options
 --------------------
 
-The `run_manager.py` script that creates and manages the render job takes various arguments. The only mandatory one is `.blend` file to render. If you don't e.g. specify a start and end frame then the values already set in the `.blend` file are used.
+The `run_manager.py` script that creates and manages the render job takes various arguments. The only mandatory one is the `.blend` file to render. If you don't e.g. specify a start and end frame then the values already set in the `.blend` file are used.
 
 Arguments:
 
 * `--blender-home` - the home directory of you local Blender installation, e.g. `~/blender-3.2.0-linux-x64`.
 * `--start`,`--end` and `--step` - the start and end frame of the animation and the step between frames (usually one).
-* `--frames` - alternatively, a comma separated list of frames can be specified, e.g. `2, 3, 5, 7, 11, 13, 17, 19`.
+* `--frames` - alternatively, a comma separated list of frames can be specified, e.g. `2, 3, 5, 7, 11, 13, 17`.
 * `--samples` - the number of samples per pixel.
 * `--ec2-instances` - the number of EC2 instances to start.
 * `--disable-interactive` - disable the prompt where the details of the job can be double-checked before the EC2 instances are started.
@@ -51,9 +51,9 @@ Various other settings must be configured in [`settings.ini`](settings.ini):
 * `instance_type` - the EC2 instance type to use, e.g. `g4dn.xlarge`.
 * `image_name_pattern` - the pattern to use to determine the image to run on the instances, e.g. `amzn2-ami-graphics-hvm-*`.
 
-You also have to specify a `security_group_name` and an `iam_instance_profile` that are used by the EC2 instances - these are covered later.
+You also have to specify the `security_group_name` and `iam_instance_profile` that are used by the EC2 instances - these are covered later.
 
-And you have to a `file_store` bucket and a `blender_archive` that's stored there - these are also covered later.
+And you have to specify a `file_store` bucket and a `blender_archive` that's stored there - these are also covered later.
 
 A pattern is used for the image name so that the latest available version of an image is always used. E.g. if using the [Amazon Linux 2 AMI with NVIDIA TESLA GPU Driver](https://aws.amazon.com/marketplace/pp/prodview-64e4rx3h733ru), the pattern `amzn2-ami-graphics-hvm-*` always maps to the latest version rather than a specific version, e.g. the `2.0.20220606.1` one, that swiftly becomes stale.
 
@@ -85,7 +85,7 @@ The local Python version must be at least 3.8 (released late 2019). This can be 
 Python 3.9.5
 ```
 
-Install [boto3](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html) and the [boto3-stubs](https://pypi.org/project/boto3-stubs/) type annotations:
+Install [`boto3`](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html) and the [`boto3-stubs`](https://pypi.org/project/boto3-stubs/) type annotations:
 
 ```
 (venv) $ pip install boto3 'boto3-stubs[essential,logs]'
@@ -98,9 +98,9 @@ Now, you just need to set up a file store and the necessary role profile to be u
 File-store setup
 ----------------
 
-The EC2 instances need a version of Blender in order to render the frames of the animation. So they need to download an archive containing Blender at startup. This archive is about 170MiB and it is far quicker to download it from within AWS than to pull it each time from the public internet.
+The EC2 instances need to download an archive containing Blender at startup so, they can render the frames of the animation. This archive is about 170MiB and it is far quicker to download it from within AWS than to pull it each time from the public internet.
 
-So an S3 bucket that's used as a long-lived file store for this archive needs to be created and a downloaded copy of Blender needs to be uploaded there so it can be later retrieved by the EC2 instances.
+So, an S3 bucket (that's used as a long-lived file store for this archive) needs to be created and an archive of Blender needs to be uploaded there.
 
 To create the S3 bucket, just run `create_file_store.py`:
 
@@ -110,22 +110,22 @@ Created s3://file-store-80b34aec-c6b7-405f-91ab-cb3d1322adc2
 To copy files there use 'aws s3 cp <filename> s3://file-store-80b34aec-c6b7-405f-91ab-cb3d1322adc2'
 ```
 
-Then download a version of Blender for Linux from the [Blender site](https://www.blender.org/download/) and upload it to the just created file store:
+Then download a version of Blender for Linux from the [Blender site](https://www.blender.org/download/) and upload it to the just created file store bucket:
 
 ```
 $ aws s3 cp ~/Downloads/blender-3.2.0-linux-x64.tar.xz s3://file-store-80b34aec-c6b7-405f-91ab-cb3d1322adc2'
 ```
 
-Then edit [`settings.ini`](settings.ini) and use the file store bucket name (`s3://file-store-80b34aec-c6b7-405f-91ab-cb3d1322adc2` in the example above) as the value for `file_store` and the Blender archive name (`blender-3.2.0-linux-x64.tar.xz` in the example above) as the `blender_archive` value.
+Then edit [`settings.ini`](settings.ini) and use the file store bucket name as the value for `file_store` and the Blender archive name as the `blender_archive` value.
 
 That's it - storing the Blender archive permanently like this costs almost nothing - the cost per GiB per year is about $0.30.
 
 Role and security group
 -----------------------
 
-The EC2 instances need an IAM role and profile and an EC2 security group - to create these you just need to go through the short opening **TLDR;** section in [`create-role.md`](docs/create-role.md) and [`create-security-groups.md`](docs/create-security-group.md).
+The EC2 instances need an IAM role and profile and an EC2 security group. To create these you just need to go through the short opening **TLDR;** section in [`create-role.md`](docs/create-role.md) and [`create-security-groups.md`](docs/create-security-group.md).
 
-Note: the created security group tries to make the EC2 instances as secure as possible - it doesn't allow any incoming so, you won't be able to ssh to these instances (but of course, they can still be terminated via e.g. [terminates-instances](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/ec2/terminate-instances.html)).
+Note: the created security group tries to make the EC2 instances as secure as possible - it doesn't allow any incoming traffic so, you won't be able to ssh to these instances (but of course, they can still be terminated via e.g. [terminates-instances](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/ec2/terminate-instances.html)).
 
 Cleaning up
 -----------
@@ -155,21 +155,23 @@ i-06bfb2ebff8962544     running
 i-0b5b95967aa51916a     running
 ```
 
-Then terminate all the ones that aren't already in state `shutting-down` or `terminated`:
+Then terminate all the ones that aren't already listed as being in state `shutting-down` or `terminated`:
 
 ```
 $ aws ec2 terminate-instances --instance-ids i-06bfb2ebff8962544 i-0b5b95967aa51916a
 ```
 
-You can check that really have terminated with the same `describe-instances` command as above - it typically takes 30s to a minute for the instances to reach `terminated` state.
+You can check that they really have terminated with the same `describe-instances` command as above - it typically takes 30s to a minute for the instances to reach `terminated` state.
 
 Summary of main Python scripts
 ------------------------------
 
-* `run_manager.py` - the script used to create a render job, launch the EC2 instances involved, monitor them and terminate them, once the job is completed, and download the results.
+These are the main scripts here:
+
+* `run_manager.py` - the script used to create a render job, launch the EC2 instances involved, monitor them and terminate them (once the job is completed), and download the results.
 * `run_worker.py` - the main script that runs on the EC2 instances and manages the rendering of individual frames.
 * `create_file_store` - the script that's run once to create a file store to which a version of Blender is uploaded (and then used by the EC2 instances).
-* `clean_up.py` - a script that can be run to delete any render related resources that may have become orphaned if experimenting with things.
+* `clean_up.py` - a script that can be run to delete any render related resources that may have become orphaned while experimenting with things.
 
 Running the worker locally
 --------------------------
@@ -217,7 +219,7 @@ Let's do that locally instead:
 
 ```
 (venv) $ mkdir job_home
-(venv) $ cd job_home/
+(venv) $ cd job_home
 (venv) $ aws s3 cp s3://render-job-bucket-b4cde934-3726-44ad-8e57-9555d3cdbfc9 . --recursive
 download: s3://render-job-bucket-b4cde934-3726-44ad-8e57-9555d3cdbfc9/boto_basics.py to ./boto_basics.py
 ...
@@ -266,13 +268,13 @@ Spot pricing
 
 Determining how much a render job is going to cost isn't trivial.
 
-The `g4dn.xlarge` instances, that I'm currently using, have an Nvidia T4 GPU. Nvidia produce data center specific GPUs, like the T4, that are hard to compare with the retail GPUs that you find in desktops or laptops - because the benchmark sites typically have zero or very poor coverage for data center GPUs.
+The `g4dn.xlarge` instances, that I'm currently using, have an Nvidia T4 GPU. Nvidia produce data center specific GPUs, like the T4, that are hard to compare with the retail GPUs that you find in desktops or laptops because the benchmark sites typically have zero or very poor coverage for data center GPUs.
 
 It turns out that a T4 has about 80% the performance of an RTX 2060 desktop GPU or about 40% the performance of an RTX 3090.
 
 If you know how your graphics card compares to the RTX 2060 (e.g. see the PassMark graphics card [benchmarks page](https://www.videocardbenchmark.net/GPU_mega_page.html)) and how long it takes your graphics card to render a frame of your animation then you can work from there to a guesstimate for how long it'll take a single T4 GPU to render a frame.
 
-Then you can work out the total time to render your animation on a `g4dn.xlarge` image and then check the current spot prices for `g4dn.xlarge` images in your region:
+Then you can work out the total time to render your animation on a `g4dn.xlarge` instance and then check the current spot prices for `g4dn.xlarge` images in your region:
 
 ```
 $ aws ec2 describe-spot-price-history --start-time=$(date +%s) --product-descriptions='Linux/UNIX' --instance-types g4dn.xlarge
@@ -304,6 +306,8 @@ $ aws ec2 describe-spot-price-history --start-time=$(date +%s) --product-descrip
 ```
 
 Above, you can see that the current spot price is $0.1974 per hour - under normal circumstances this is exactly 30% of the on-demand price (30% seems to be a lower bound - AWS don't seem to let the spot price fall below this).
+
+Note: the `Timestamp` values may be up to a day old - the prices typically don't change very often.
 
 So if you estimate that your render will take 16 hours using a single T4 GPU then the price will be 16 * $0.1974, i.e. $3.16.
 
