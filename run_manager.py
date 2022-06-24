@@ -30,6 +30,17 @@ def report_non_terminated():
     print(f"There are {non_terminated} EC2 instances still running")
 
 
+def confirm(settings, clean_up):
+    print(
+        f"instance count = {settings.instance_count}, .blend file = {settings.blend_file}, "
+        f"{frames_str(settings.frames)}, samples = {settings.samples} and motion_blur = {settings.motion_blur}"
+    )
+    if settings.interactive and input("Launch workers? [y/n] ") != "y":
+        if input("Clean up? [Y/n] ") != "n":
+            clean_up()
+        sys.exit(0)
+
+
 def main():
     settings = get_settings()
 
@@ -62,14 +73,7 @@ def main():
         print("Deleted log group, bucket and table")
         delete_temporary_files()
 
-    print(
-        f"instance count = {settings.instance_count}, .blend file = {settings.blend_file}, "
-        f"{frames_str(settings.frames)}, samples = {settings.samples} and motion_blur = {settings.motion_blur}"
-    )
-    if settings.interactive and input("Launch workers? [y/n] ") != "y":
-        if input("Clean up? [Y/n] ") != "n":
-            clean_up()
-        sys.exit(0)
+    confirm(settings, clean_up)
 
     instance_ids = create_instances(
         settings.instance_count,

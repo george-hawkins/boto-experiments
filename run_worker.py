@@ -1,5 +1,6 @@
 import argparse
 import os
+import traceback
 
 from boto_basics import BotoBasics, get_s3_uri
 from cloud_watch_logger import CloudWatchLogger
@@ -31,16 +32,7 @@ def parse_args():
     return blender, args.samples, motion_blur, args.render_job_id
 
 
-def main():
-    blender, samples, motion_blur, job_id = parse_args()
-
-    names = Names(job_id)
-
-    group_name = names.log_group
-    stream_name = get_instance_id()
-    logger = CloudWatchLogger(basics, group_name, stream_name)
-    logger.info("job started")
-
+def render(logger, names, blender, samples, motion_blur):
     bucket_name = names.bucket
     bucket = basics.get_bucket(bucket_name)
 
@@ -59,6 +51,27 @@ def main():
         os.unlink(output_file)
         frames_table.delete_frame(frame)
         logger.info(f"completed and uploaded {get_s3_uri(s3_output_file)}")
+
+
+def main():
+    blender, samples, motion_blur, job_id = parse_args()
+
+    names = Names(job_id)
+
+    group_name = names.log_group
+    stream_name = get_instance_id()
+    basics.create_log_stream(group_name, stream_name)
+    logger = CloudWatchLogger(basics, group_name, stream_name)
+
+    logger.info("job started")
+
+    # noinspection PyBroadException
+    try:
+        render(logger, names, blender, samples, motion_blur)
+    except Exception:
+        # Try to ensure all exceptions are logged otherwise all one sees is the silent shutdown of the instance.
+        exception = traceback.format_exc().encode("unicode_escape").decode()
+        logger.info(exception)
 
     logger.info("exiting")
 

@@ -11,8 +11,6 @@ class CloudWatchLogger:
         self._group_name = group_name
         self._stream_name = stream_name
         self._sequence = None
-        basics.create_log_group(group_name)
-        basics.create_log_stream(group_name, stream_name)
 
     # To tail these entries, use 'aws logs tail <group-name> --follow'.
     def info(self, message):

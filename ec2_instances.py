@@ -64,6 +64,13 @@ def monitor_and_terminate(group_name, instance_ids, is_finished):
     prev_states = {}
 
     while True:
+        # Poll for log events from the workers and print them before anything else otherwise, the timestamps
+        # of these already occurred remote events will mix oddly with local timestamps generated below.
+        log_events = retriever.get_log_events(basics, group_name)
+        for event in log_events:
+            local_datetime = retriever.to_local_datetime_str(event["timestamp"])
+            print(f"{local_datetime} {event['logStreamName']} {event['message']}")
+
         # Check if all instances have terminated - if so exit the loop.
         descriptions = basics.describe_instances(instance_ids)
         states = {description["InstanceId"]: description["State"]["Name"] for description in descriptions}
@@ -84,11 +91,5 @@ def monitor_and_terminate(group_name, instance_ids, is_finished):
             running = [instance_id for instance_id, state in states.items() if state == "running"]
             print(f"Terminating {len(running)} instances that are still running")
             basics.terminate_instances(running)
-
-        # Poll for log events from the workers.
-        log_events = retriever.get_log_events(basics, group_name)
-        for event in log_events:
-            local_datetime = retriever.to_local_datetime_str(event["timestamp"])
-            print(f"{local_datetime} {event['logStreamName']} {event['message']}")
 
         sleep(_POLLING_INTERVAL)
