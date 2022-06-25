@@ -35,7 +35,7 @@ def confirm(settings, clean_up):
         f"instance count = {settings.instance_count}, .blend file = {settings.blend_file}, "
         f"{frames_str(settings.frames)}, samples = {settings.samples} and motion_blur = {settings.motion_blur}"
     )
-    if settings.interactive and input("Launch workers? [y/n] ") != "y":
+    if settings.interactive and input("Launch workers? [y/N] ") != "y":
         if input("Clean up? [Y/n] ") != "n":
             clean_up()
         sys.exit(0)

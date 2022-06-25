@@ -33,6 +33,8 @@ This profile can now be associated with EC2 instances.
 
 That's it. The rest of this page just goes into more detail about creating policies, roles and profiles; and covers associating a profile with a running EC2 instance.
 
+**Update:** for even more detail, see [here](role-permissions.md) - this may be more useful than the sections below.
+
 Create policy
 -------------
 

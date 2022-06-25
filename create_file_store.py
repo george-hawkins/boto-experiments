@@ -6,7 +6,7 @@ basics = BotoBasics()
 
 
 def main():
-    bucket_name = f"file-store-{uuid4()}"
+    bucket_name = f"render-job-file-store-{uuid4()}"
     bucket = basics.create_bucket(bucket_name)
 
     print(f"Created {get_s3_uri(bucket)}")

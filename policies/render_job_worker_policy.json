@@ -2,28 +2,22 @@
     "Version": "2012-10-17",
     "Statement": [
         {
-            "Sid": "S3ListBucket",
+            "Sid": "S3Actions",
             "Effect": "Allow",
-            "Action": ["s3:ListBucket"],
-            "Resource": "*"
-        },
-        {
-            "Sid": "S3AllObjectActions",
-            "Effect": "Allow",
-            "Action": "s3:*Object",
-            "Resource": "*"
+            "Action": ["s3:GetObject", "s3:PutObject", "s3:ListBucket"],
+            "Resource": "arn:aws:s3:::render-job-*"
         },
         {
             "Sid": "LogActions",
             "Effect": "Allow",
-            "Action": "logs:*",
-            "Resource": "*"
+            "Action": ["logs:CreateLogStream", "logs:PutLogEvents"],
+            "Resource": "arn:aws:logs:*:*:log-group:render-job-*"
         },
         {
             "Sid": "DynamoDbActions",
             "Effect": "Allow",
-            "Action": "dynamodb:*",
-            "Resource": "*"
+            "Action": ["dynamodb:UpdateItem", "dynamodb:DeleteItem", "dynamodb:Scan"],
+            "Resource": "arn:aws:dynamodb:*:*:table/render-job-*"
         }
     ]
 }

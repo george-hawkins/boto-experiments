@@ -106,14 +106,14 @@ To create the S3 bucket, just run `create_file_store.py`:
 
 ```
 (venv) $ python create_file_store.py 
-Created s3://file-store-80b34aec-c6b7-405f-91ab-cb3d1322adc2
-To copy files there use 'aws s3 cp <filename> s3://file-store-80b34aec-c6b7-405f-91ab-cb3d1322adc2'
+Created s3://render-job-file-store-b4867a49-d22c-4084-ba72-8e760e3a2722
+To copy files there use 'aws s3 cp <filename> s3://render-job-file-store-b4867a49-d22c-4084-ba72-8e760e3a2722'
 ```
 
 Then download a version of Blender for Linux from the [Blender site](https://www.blender.org/download/) and upload it to the just created file store bucket:
 
 ```
-$ aws s3 cp ~/Downloads/blender-3.2.0-linux-x64.tar.xz s3://file-store-80b34aec-c6b7-405f-91ab-cb3d1322adc2'
+$ aws s3 cp ~/Downloads/blender-3.2.0-linux-x64.tar.xz s3://render-job-file-store-b4867a49-d22c-4084-ba72-8e760e3a2722
 ```
 
 Then edit [`settings.ini`](settings.ini) and use the file store bucket name as the value for `file_store` and the Blender archive name as the `blender_archive` value.
@@ -337,47 +337,17 @@ If, rather than a single EC2 instance, you spin up e.g. 32 instances then the re
 
 For more on spot pricing, see my notes [here](https://github.com/george-hawkins/aws-notes/blob/master/more-aws-notes.md#spot-pricing).
 
+Development
+-----------
+
+If adding new features, it's probably easiest to first establish a more permissive policy document during development and then tighten things back up afterward. For more on updating policies, see [here](docs/role-permissions.md).
+
 Notes
 -----
 
-See also:
+The [`user_data`](templates/user_data) script installs the v2 version of the AWS CLI. At the moment (mid 2022), Amazon Linux 2 still comes with just v1 installed. Once v2 is installed, you don't have to take any extra steps - it's installed in `/usr/local/bin` while v1 is installed in `/usr/bin` and `local` comes first in the default path so, it always takes precedence.
+
+For other notes, see also:
 
 * [`boto3-notes.md`](docs/boto3-notes.md).
 * [`public-ip-address.md`](docs/public-ip-address.md)
-
-TODO
-----
-
-The policy specified in [`policies/render_job_worker_policy.json`](policies/render_job_worker_policy.json) could be made much tighter and restricted to a far narrower range of actions.
-
-Determining which actions Boto3 actually uses is easy. Add the following lines to the top of `run_worker.py`:
-
-```
-import logging
-logging.basicConfig(filename="actions.log")
-hooks_logger = logging.getLogger("botocore.hooks")
-hooks_logger.setLevel(logging.DEBUG)
-```
-
-Then run `run_worker.py` locally as described above. Once it's completed and logged the relevant information to `actions.log`, the actions used can be extracted like so:
-
-```
-(venv) $ sed -n 's/.*Event request.created.\([^:]*\).*/\1/p' actions.log | sort -u
-cloudwatch-logs.CreateLogGroup
-cloudwatch-logs.CreateLogStream
-cloudwatch-logs.PutLogEvents
-dynamodb.DeleteItem
-dynamodb.Scan
-dynamodb.UpdateItem
-s3.PutObject
-```
-
-As can be seen, very few actions are actually used.
-
-It might also be possible to restrict what resources can be accessed (instead of using `*` as is done at the moment).
-
-Note: there are also a couple of actions, that are not captured by the above, that are needed to support the AWS CLI usage in the `user_data` and `start_job` scripts.
-
----
-
-Also, at the moment if the `run_worker.py` script fails with an exception, this will be invisible (except for the fact that the instance then powers off). Wrapping the main function with a `try:` and logging any exception to CloudWatch logs would be a good idea.
