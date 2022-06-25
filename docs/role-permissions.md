@@ -40,14 +40,14 @@ s3.ListObjectsV2
 ```
 
 ```
-aws --debug s3 cp s3://file-store-dcede0e0-aec4-4920-9532-c89a3a151af2/blender-3.2.0-linux-x64.tar.xz . 2>&1 | sed -n 's/.*Event request.created.\([^:]*\).*/\1/p' | sort -u
+$ aws --debug s3 cp s3://file-store-dcede0e0-aec4-4920-9532-c89a3a151af2/blender-3.2.0-linux-x64.tar.xz . 2>&1 | sed -n 's/.*Event request.created.\([^:]*\).*/\1/p' | sort -u
 s3.GetObject
 s3.HeadObject
 ```
 
-Note: v1 of the AWS CLI sometimes uses more permissions for a particular operation than v2 - so watch out for differences between your locally installed version and the v1 version that is still the default in Amazon Linux 2 images.
+Note: v1 of the AWS CLI sometimes uses more permissions for a particular operation than v2 - so watch out for differences between your locally installed version and the v1 version that is still the default for Amazon Linux 2 images.
 
-So, above we see that the actions `s3.GetObject`, `s3.ListObjectsV2`, `s3.GetObject` and `s3.HeadObject` are required. If you look at the policy document, you'll see you need to specify actions - so it might seem obvious that you specify these values.
+So, above we see that the actions `s3.GetObject`, `s3.ListObjectsV2`, `s3.GetObject` and `s3.HeadObject` are required. If you look at the policy document, you'll see you need to specify `Action` values - so it might seem obvious that you specify these values.
 
 However, it seems that the `Actions` in the policy document are really permissions. In general there's a one-to-one mapping between the two - but it turns out that `ListObjectsV2` and `HeadObject` are not permissions.
 
@@ -63,7 +63,7 @@ This may all be a historical anomaly specific to S3 or it and some other older s
 
 ### Boto3
 
-To determine which actions a Boto3 Python script uses, add the following to top of the scripts:
+To determine which actions a Boto3 Python script uses, add the following to the top of the script:
 
 ```
 import logging
@@ -117,7 +117,7 @@ $ cat policies/experiments_policy.json
 
 The format of ARNs is described [here](https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html). Most ARNs require an account ID (or a wildcard `*` in its place) but S3 ARNs do not as S3 bucket names are unique across accounts and regions.
 
-Note: the resource specifications above are still quite loose - for a more paranoid setup these could be tightened up further.
+Note: the `Resource` specifications above are still quite loose - for a more paranoid setup these could be tightened up further.
 
 ### Replacing the old RenderJobWorkerPolicy
 
@@ -204,7 +204,7 @@ Or just set `INSTANCE_ID` from the "Instance ID" value shown in the output from 
 $ INSTANCE_ID=i-0ba90fa3ac2496f36
 ```
 
-Choose a base name for policy, role and profile:
+Now, we have an EC2 instance to experiment with. Back on your local machine, choose a base name for policy, role and profile:
 
 ```
 $ IAM_BASE_NAME=Experiments
@@ -261,7 +261,7 @@ And associate the new profile:
 $ aws ec2 associate-iam-instance-profile --instance-id $INSTANCE_ID --iam-instance-profile "Name=${IAM_BASE_NAME}Profile"
 ```
 
-Now, to iterate over different permission settings, just update the policy document and register it as the new default version of the policy:
+Now, to iterate on different permission settings, just update the policy document and register it as the new default version of the policy:
 
 ```
 $ vim policies/experiments_policy.json 
