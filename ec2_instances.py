@@ -60,6 +60,8 @@ def create_instances(
 
 # Monitor the instances, track their progress and terminate them once completed.
 def monitor_and_terminate(group_name, instance_ids, is_finished):
+    started = datetime.now()
+
     retriever = LogsRetriever()
 
     check_is_finished = True
@@ -95,3 +97,9 @@ def monitor_and_terminate(group_name, instance_ids, is_finished):
             basics.terminate_instances(running)
 
         sleep(_POLLING_INTERVAL)
+
+    running_time = datetime.now() - started
+    print(f"{len(instance_ids)} instances ran for ([days, ] h:m:s): {str(running_time)}")
+    total_time = running_time * len(instance_ids)
+    total_mins = total_time.total_seconds() / 60
+    print(f"That's {total_mins:.3f} minutes of instance time at the relevant spot price")

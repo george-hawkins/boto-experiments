@@ -60,8 +60,9 @@ def _download_objects(bucket, keys, output_dir):
         obj = bucket.Object(key)
         filename = key.split("/")[-1]
         obj.download_file(f"{output_dir}/{filename}")
-        print(f"Downloaded {filename}")
+        print(".", end="")
 
+    print()  # Add newline after dots.
     return len(keys)
 
 
