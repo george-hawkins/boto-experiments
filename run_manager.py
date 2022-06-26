@@ -1,7 +1,7 @@
 import sys
 from uuid import uuid4
 
-from boto_basics import BotoBasics, INSTANCE_STATES
+from boto_basics import BotoBasics, report_non_terminated_instances
 from ec2_instances import create_instances, monitor_and_terminate
 from job_steps import (
     create_worker_files,
@@ -20,14 +20,6 @@ PACKED_BLEND_FILE = "packed.blend"
 basics = BotoBasics()
 job_id = uuid4()
 names = Names(job_id)
-
-
-# Check for running instances, irrespective of whether they're related to this job.
-def report_non_terminated():
-    states = list(INSTANCE_STATES)
-    states.remove("terminated")
-    non_terminated = len(basics.describe_instances(filters={"instance-state-name": states}))
-    print(f"There are {non_terminated} EC2 instances still running")
 
 
 def confirm(settings, clean_up):
@@ -91,7 +83,7 @@ def main():
     print("Job completed successfully")
 
     # Reassure that there are no unexpected outstanding instances.
-    report_non_terminated()
+    report_non_terminated_instances(basics)
 
 
 if __name__ == "__main__":

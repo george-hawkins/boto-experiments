@@ -1,4 +1,3 @@
-import sys
 from typing import List, Optional, Dict
 
 import boto3
@@ -16,10 +15,10 @@ from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 from mypy_boto3_dynamodb.type_defs import AttributeDefinitionTypeDef, KeySchemaElementTypeDef
 from mypy_boto3_logs import CloudWatchLogsClient
 
-from ec2_metadata import is_aws, get_region
+from ec2_metadata import get_region
 
 # A tuple avoids the risk of users mutating the value.
-INSTANCE_STATES = ("pending", "running", "shutting-down", "stopped", "stopping", "terminated")
+_INSTANCE_STATES = ("pending", "running", "shutting-down", "stopped", "stopping", "terminated")
 
 
 # https://stackoverflow.com/a/952952/245602
@@ -52,6 +51,14 @@ def get_s3_uri(item):
         return f"s3://{item.bucket_name}/{item.key}"
     else:
         raise RuntimeError(f"unexpected type {type(item)}")
+
+
+# Report all EC2 instances that are not in terminated state.
+def report_non_terminated_instances(basics):
+    states = list(_INSTANCE_STATES)
+    states.remove("terminated")
+    non_terminated = len(basics.describe_instances(filters={"instance-state-name": states}))
+    print(f"There are currently {non_terminated} non-terminated EC2 instances")
 
 
 class BotoBasics:

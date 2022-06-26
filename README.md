@@ -169,7 +169,14 @@ table deletion took 20.08s
 Deleted table render-job-dynamodb-7238af0c-fc26-49a7-b336-ca3a03fee08d
 ```
 
-This will **not** terminate any EC2 instances you have running. To you want to do this, first find all your EC2 instances:
+This will **not** terminate any EC2 instances you have running. To reassure yourself that you have no running EC2 instances (irrespective of whether they're render job related or not), run `running_instances.py`:
+
+```
+(venv) $ python running_instances.py
+There are currently 0 non-terminated EC2 instances
+```
+
+If there are running instances, and you want to terminate them, first find them:
 
 ```
 $ aws ec2 describe-instances --query 'Reservations[*].Instances[*].[InstanceId, State.Name]' --o text
@@ -194,6 +201,7 @@ These are the main scripts here:
 * `run_worker.py` - the main script that runs on the EC2 instances and manages the rendering of individual frames.
 * `create_file_store` - the script that's run once to create a file store to which a version of Blender is uploaded (and then used by the EC2 instances).
 * `clean_up.py` - a script that can be run to delete any render related resources that may have become orphaned while experimenting with things.
+* `running_instances.py` - reports the number of EC2 instances that are not in terminated state.
 
 Running the worker locally
 --------------------------
@@ -341,6 +349,34 @@ Development
 -----------
 
 If adding new features, it's probably easiest to first establish a more permissive policy document during development and then tighten things back up afterward. For more on updating policies, see [here](docs/role-permissions.md).
+
+E.g. the following enables all permissions for all resources for S3, CloudWatch Logs and DynamoDB:
+
+```
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "S3Actions",
+            "Effect": "Allow",
+            "Action": "s3:*",
+            "Resource": "*"
+        },
+        {
+            "Sid": "LogActions",
+            "Effect": "Allow",
+            "Action": "logs:*",
+            "Resource": "*"
+        },
+        {
+            "Sid": "DynamoDbActions",
+            "Effect": "Allow",
+            "Action": "dynamodb:*",
+            "Resource": "*"
+        }
+    ]
+}
+```
 
 Notes
 -----
