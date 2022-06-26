@@ -73,6 +73,7 @@ def main():
         settings.image_name_pattern,
         settings.instance_type,
         settings.security_group_name,
+        settings.key_name,
         settings.iam_instance_profile,
         USER_DATA
     )
@@ -80,7 +81,7 @@ def main():
 
     count = download_results(basics, job_id, bucket, "frames")
     if count != len(settings.frames):
-        print(f"Error: expected {settings.frames} frames but downloaded {count}")
+        print(f"Error: expected {len(settings.frames)} frames but downloaded {count}")
 
     clean_up()
     print("Job completed")

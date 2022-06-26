@@ -33,6 +33,7 @@ def create_instances(
     image_name_pattern,
     instance_type,
     security_group_name,
+    key_name,
     iam_instance_profile,
     user_data_filename
 ):
@@ -45,6 +46,7 @@ def create_instances(
         image_id=image_id,
         instance_type=instance_type,
         security_group_name=security_group_name,
+        key_name=key_name,
         iam_instance_profile=iam_instance_profile,
         user_data=user_data,
         count=instance_count,

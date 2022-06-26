@@ -345,6 +345,51 @@ If, rather than a single EC2 instance, you spin up e.g. 32 instances then the re
 
 For more on spot pricing, see my notes [here](https://github.com/george-hawkins/aws-notes/blob/master/more-aws-notes.md#spot-pricing).
 
+Debugging worker failure
+------------------------
+
+If you've made a change to e.g. `templates/user_data` and the workers start failing, it can be hard to see what's going on.
+
+To debug this situation:
+
+* Comment out `poweroff` in [`templates/user_data`](templates/user_data).
+* Uncomment the `security_group` and `key_name` entries in [`settings.ini`](settings.ini) that point to a security group that allows incoming ssh connections and to the name of the key-pair to use for such connections (and make sure the entries are valid for your setup and that e.g. the source IP address specified in the security group is still valid).
+* Start a job with a single instance, like so:
+
+```
+$ python run_manager.py --ec2-instances 1 foo.blend
+```
+
+* Find the instance's public IP address:
+
+```
+$ aws ec2 describe-instances --query 'Reservations[*].Instances[*].[InstanceId, PublicIpAddress, State.Name]' --o text
+i-0cfe5ea7ed066a99a     None    terminated
+i-08488b8f265efb192     3.72.47.246     running
+```
+
+* Ssh to the instance:
+
+```
+$ INSTANCE_IP=3.72.47.246
+$ ssh -oStrictHostKeyChecking=accept-new -i aws-key-pair.pem ec2-user@$INSTANCE_IP
+```
+
+* Sudo to root and look for error output from your `user_data` script:
+
+```
+$ sudo su -
+# less /var/log/cloud-init-output.log
+```
+
+* And take a look at your `user_data` script as extracted by `cloud-init`:
+
+```
+# less /var/lib/cloud/instance/scripts/part-001
+```
+
+Hopefully, the failure reason will be obvious from `cloud-init-output.log`. Once resolved, don't forget to `poweroff` the instance.
+
 Development
 -----------
 

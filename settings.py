@@ -11,6 +11,7 @@ Settings = namedtuple("Settings", [
     "instance_type",
     "image_name_pattern",
     "security_group_name",
+    "key_name",
     "iam_instance_profile",
     "blender",
     "file_store",
@@ -58,6 +59,7 @@ def get_settings() -> Settings:
     instance_type = config.get("instance_type")
     image_name_pattern = config.get("image_name_pattern")
     security_group_name = config.get("security_group_name")
+    key_name = config.get("key_name")
     iam_instance_profile = config.get("iam_instance_profile")
 
     args = _parse_args()
@@ -118,6 +120,7 @@ def get_settings() -> Settings:
         instance_type=instance_type,
         image_name_pattern=image_name_pattern,
         security_group_name=security_group_name,
+        key_name=key_name,
         iam_instance_profile=iam_instance_profile,
         blender=blender,
         file_store=file_store,

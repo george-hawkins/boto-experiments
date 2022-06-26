@@ -112,11 +112,11 @@ class BotoBasics:
         image_id,
         instance_type,
         security_group_name,
+        key_name=None,
         iam_instance_profile=None,
         user_data=None,
         count=1,
         min_count=1,
-        key_name=None,
         shutdown_behavior="terminate",
         spot=False
     ) -> List[Instance]:

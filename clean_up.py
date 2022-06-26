@@ -1,22 +1,24 @@
 from boto_basics import BotoBasics
-from names import RENDER_JOB_PREFIX
+from names import Names
 
 basics = BotoBasics()
 
 
 def main():
-    for log_group in basics.list_log_groups(RENDER_JOB_PREFIX):
+    names = Names("")
+
+    for log_group in basics.list_log_groups(prefix=names.log_group):
         name = log_group["logGroupName"]
         basics.delete_log_group(name)
         print(f"Deleted log group {name}")
 
     for bucket in basics.list_buckets():
-        if bucket.name.startswith(RENDER_JOB_PREFIX):
+        if bucket.name.startswith(names.bucket):
             basics.delete_bucket(bucket)
             print(f"Deleted bucket {bucket.name}")
 
     for table in basics.list_tables():
-        if table.table_name.startswith(RENDER_JOB_PREFIX):
+        if table.table_name.startswith(names.dynamodb):
             basics.delete_table(table)
             print(f"Deleted table {table.table_name}")
 
