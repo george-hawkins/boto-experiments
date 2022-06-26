@@ -3,13 +3,14 @@ from typing import List, Optional, Dict
 import boto3
 import botocore.session
 from botocore.config import Config
+from botocore.exceptions import ClientError
 from timeit import default_timer as timer
 
 # boto3-stubs type annotations - https://mypy-boto3.readthedocs.io/en/latest/
 from mypy_boto3_ec2 import EC2Client
 from mypy_boto3_ec2.service_resource import EC2ServiceResource, Instance
 from mypy_boto3_s3 import S3Client
-from mypy_boto3_s3.service_resource import S3ServiceResource
+from mypy_boto3_s3.service_resource import S3ServiceResource, Object
 from mypy_boto3_s3.type_defs import CreateBucketConfigurationTypeDef
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 from mypy_boto3_dynamodb.type_defs import AttributeDefinitionTypeDef, KeySchemaElementTypeDef
@@ -171,6 +172,14 @@ class BotoBasics:
     def describe_instance_status(self, instance_ids) -> List[dict]:
         return self._get_ec2_client().describe_instance_status(InstanceIds=instance_ids)["InstanceStatuses"]
 
+    def describe_spot_price_history(self, instance_type, start_time, end_time, product_description="Linux/UNIX"):
+        return self._get_ec2_client().describe_spot_price_history(
+            InstanceTypes=[instance_type],
+            StartTime=start_time,
+            EndTime=end_time,
+            ProductDescriptions=[product_description]
+        )["SpotPriceHistory"]
+
     @property
     def ec2_exceptions(self):
         return self._get_ec2_client().exceptions
@@ -210,6 +219,19 @@ class BotoBasics:
         contents = _flatten([i["Contents"] for i in iterator if "Contents" in i])
         return [obj["Key"] for obj in contents]
 
+    @staticmethod
+    def object_exists(obj: Object) -> bool:
+        # I don't like provoking exceptions but this does seem to be the most efficient way
+        # to test for object existence - see https://stackoverflow.com/q/33842944/245602
+        try:
+            # noinspection PyStatementEffect
+            obj.metadata  # Trigger HeadObject API call.
+            return True
+        except ClientError as e:
+            if e.response['ResponseMetadata']['HTTPStatusCode'] == 404:
+                return False
+            raise e
+
     def _get_dynamodb_resource(self) -> DynamoDBServiceResource:
         self._dynamodb_resource = self._get_or_create_resource(self._dynamodb_resource, "dynamodb")
         return self._dynamodb_resource
@@ -227,14 +249,14 @@ class BotoBasics:
             AttributeDefinitions=defs,
             BillingMode="PAY_PER_REQUEST"
         )
-        _show_time("table creation", lambda: table.wait_until_exists())
+        _show_time("Table creation", lambda: table.wait_until_exists())
         return table
 
     @staticmethod
     def delete_table(table: Table):
         print(f"Deleting table {table.table_name}...")
         table.delete()
-        _show_time("table deletion", lambda: table.wait_until_not_exists())
+        _show_time("Table deletion", lambda: table.wait_until_not_exists())
 
     def list_tables(self):
         return self._get_dynamodb_resource().tables.all()

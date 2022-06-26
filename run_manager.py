@@ -68,6 +68,7 @@ def main():
     confirm(settings, clean_up)
 
     instance_ids = create_instances(
+        basics,
         settings.instance_count,
         names.worker,
         settings.image_name_pattern,
@@ -77,7 +78,7 @@ def main():
         settings.iam_instance_profile,
         USER_DATA
     )
-    monitor_and_terminate(names.log_group, instance_ids, is_finished=lambda: table.get_remaining() == 0)
+    monitor_and_terminate(basics, names.log_group, instance_ids, is_finished=lambda: table.get_remaining() == 0)
 
     count = download_results(basics, job_id, bucket, "frames")
     if count != len(settings.frames):

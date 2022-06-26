@@ -1,7 +1,8 @@
 from collections import Counter
 from time import sleep
 
-from boto_basics import BotoBasics
+from botocore.utils import parse_timestamp
+
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -11,15 +12,12 @@ from log_retriever import LogsRetriever
 # time to go from "running" via "shutting-down" to "terminated"). So 10s seems a reasonable polling interval.
 _POLLING_INTERVAL = 10
 
-basics = BotoBasics()
 
-
-def _get_latest_image_id(image_name_pattern):
+def _get_latest_image_id(basics, image_name_pattern):
     image = basics.get_latest_image(image_name_pattern)
 
-    # Python's `fromisoformat` can handle '+00:00' but not 'Z'. Their documentation
-    # suggests the 3rd party `dateutil` if you need complete ISO-8601 handling.
-    created = datetime.fromisoformat(image["CreationDate"].replace("Z", "+00:00"))
+    # For some requests botocore handles the parsing to datetime for others you have to do it yourself.
+    created = parse_timestamp(image["CreationDate"])
     delta = datetime.now(timezone.utc) - created
     print(f"Using image {image['Description']} ({image['Name']})")
     print(f"Image created: {created} ({delta.days} days ago)")
@@ -28,6 +26,7 @@ def _get_latest_image_id(image_name_pattern):
 
 
 def create_instances(
+    basics,
     instance_count,
     instance_name,
     image_name_pattern,
@@ -37,7 +36,7 @@ def create_instances(
     iam_instance_profile,
     user_data_filename
 ):
-    image_id = _get_latest_image_id(image_name_pattern)
+    image_id = _get_latest_image_id(basics, image_name_pattern)
 
     user_data = Path(user_data_filename).read_text()
 
@@ -58,9 +57,27 @@ def create_instances(
     return instance_ids
 
 
+def report_price_guesstimate(basics, instance_count, start_time, end_time):
+    running_time = end_time - start_time
+    total_time = running_time * instance_count
+    total_secs = total_time.total_seconds()
+    total_mins = total_time.total_seconds() / 60
+
+    # Just find the worst price for the time period, rather than trying a more complex price break-down.
+    spot_price_history = basics.describe_spot_price_history("g4dn.xlarge", start_time, end_time)
+    prices = [float(item["SpotPrice"]) for item in spot_price_history]
+    max_price = max(prices)
+
+    price = max_price * total_secs / 3600
+
+    print(f"{instance_count} instances ran for ([days, ] h:m:s): {str(running_time)}")
+    print(f"The maximum spot price during this period was US${max_price:.2f} per hour")
+    print(f"So that's {total_mins:.3f} minutes of EC2 instance time for a total cost of at most US${price:.2f}")
+
+
 # Monitor the instances, track their progress and terminate them once completed.
-def monitor_and_terminate(group_name, instance_ids, is_finished):
-    started = datetime.now()
+def monitor_and_terminate(basics, group_name, instance_ids, is_finished):
+    start_time = datetime.now()
 
     retriever = LogsRetriever()
 
@@ -98,8 +115,4 @@ def monitor_and_terminate(group_name, instance_ids, is_finished):
 
         sleep(_POLLING_INTERVAL)
 
-    running_time = datetime.now() - started
-    print(f"{len(instance_ids)} instances ran for ([days, ] h:m:s): {str(running_time)}")
-    total_time = running_time * len(instance_ids)
-    total_mins = total_time.total_seconds() / 60
-    print(f"That's {total_mins:.3f} minutes of instance time at the relevant spot price")
+    report_price_guesstimate(basics, len(instance_ids), start_time, datetime.now())

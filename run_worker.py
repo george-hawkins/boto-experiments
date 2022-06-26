@@ -47,10 +47,14 @@ def render(logger, names, blender, samples, motion_blur):
         output_file = render_blend_file_frame(blender, PACKED_BLEND_FILE, samples, motion_blur, frame)
         basename = os.path.basename(output_file)
         s3_output_file = bucket.Object(f"frames/{basename}")
-        s3_output_file.upload_file(output_file)
+        if basics.object_exists(s3_output_file):
+            # Skip upload if another worker already beat us to it.
+            logger.info(f"completed frame {frame} but skipped upload")
+        else:
+            s3_output_file.upload_file(output_file)
+            logger.info(f"completed and uploaded {get_s3_uri(s3_output_file)}")
         os.unlink(output_file)
         frames_table.delete_frame(frame)
-        logger.info(f"completed and uploaded {get_s3_uri(s3_output_file)}")
 
 
 def main():

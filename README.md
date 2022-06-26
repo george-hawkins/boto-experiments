@@ -296,7 +296,15 @@ Deleted log group render-job-log_group-b4cde934-3726-44ad-8e57-9555d3cdbfc9
 Spot pricing
 ------------
 
-Determining how much a render job is going to cost isn't trivial.
+At the end of the render, a guesstimate of the price is output:
+
+```
+4 instances ran for ([days, ] h:m:s): 0:02:57.728078
+The maximum spot price during this period was US$0.20 per hour
+So that's 11.849 minutes of EC2 instance time for a total cost of at most US$0.04
+```
+
+However, determining _in advance_ how much a render job is likely to cost isn't trivial.
 
 The `g4dn.xlarge` instances, that I'm currently using, have an Nvidia T4 GPU. Nvidia produce data center specific GPUs, like the T4, that are hard to compare with the retail GPUs that you find in desktops or laptops because the benchmark sites typically have zero or very poor coverage for data center GPUs.
 
