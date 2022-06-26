@@ -78,9 +78,12 @@ def main():
     )
     monitor_and_terminate(names.log_group, instance_ids, is_finished=lambda: table.get_remaining() == 0)
 
-    download_results(basics, job_id, bucket, "frames")
+    count = download_results(basics, job_id, bucket, "frames")
+    if count != len(settings.frames):
+        print(f"Error: expected {settings.frames} frames but downloaded {count}")
+
     clean_up()
-    print("Job completed successfully")
+    print("Job completed")
 
     # Reassure that there are no unexpected outstanding instances.
     report_non_terminated_instances(basics)

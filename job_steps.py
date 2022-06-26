@@ -62,12 +62,16 @@ def _download_objects(bucket, keys, output_dir):
         obj.download_file(f"{output_dir}/{filename}")
         print(f"Downloaded {filename}")
 
+    return len(keys)
+
 
 def download_results(basics, job_id, bucket, remote_dir):
     output_dir = f"results/{job_id}"
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
     keys = basics.list_objects(bucket.name, remote_dir)
-    _download_objects(bucket, keys, output_dir)
+    count = _download_objects(bucket, keys, output_dir)
 
-    print(f"Downloaded all results to {output_dir}")
+    print(f"Downloaded {count} files to {output_dir}")
+
+    return count
