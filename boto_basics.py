@@ -172,9 +172,17 @@ class BotoBasics:
     def describe_instance_status(self, instance_ids) -> List[dict]:
         return self._get_ec2_client().describe_instance_status(InstanceIds=instance_ids)["InstanceStatuses"]
 
-    def describe_spot_price_history(self, instance_type, start_time, end_time, product_description="Linux/UNIX"):
+    def describe_spot_price_history(
+        self,
+        instance_type,
+        availability_zone,
+        start_time,
+        end_time,
+        product_description="Linux/UNIX"
+    ):
         return self._get_ec2_client().describe_spot_price_history(
             InstanceTypes=[instance_type],
+            AvailabilityZone=availability_zone,
             StartTime=start_time,
             EndTime=end_time,
             ProductDescriptions=[product_description]
@@ -224,8 +232,7 @@ class BotoBasics:
         # I don't like provoking exceptions but this does seem to be the most efficient way
         # to test for object existence - see https://stackoverflow.com/q/33842944/245602
         try:
-            # noinspection PyStatementEffect
-            obj.metadata  # Trigger HeadObject API call.
+            obj.load()  # Trigger HeadObject API call.
             return True
         except ClientError as e:
             if e.response['ResponseMetadata']['HTTPStatusCode'] == 404:

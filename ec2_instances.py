@@ -6,6 +6,7 @@ from botocore.utils import parse_timestamp
 from datetime import datetime, timezone
 from pathlib import Path
 
+from boto_basics import BotoBasics
 from log_retriever import LogsRetriever
 
 # It takes about 30s for a typical instance to start (go from "pending" to "running" and a similar amount of
@@ -26,7 +27,7 @@ def _get_latest_image_id(basics, image_name_pattern):
 
 
 def create_instances(
-    basics,
+    basics: BotoBasics,
     instance_count,
     instance_name,
     image_name_pattern,
@@ -51,32 +52,54 @@ def create_instances(
         count=instance_count,
         spot=True
     )
+
+    availability_zone = {instance.placement["AvailabilityZone"] for instance in instances}
+
+    assert len(availability_zone) == 1, f"expected one availability zone, found {availability_zone}"
+
+    availability_zone = next(iter(availability_zone))
+
+    print(f"Availability zone: {availability_zone}")
+
     instance_ids = [instance.instance_id for instance in instances]
     basics.wait_instances_exist(instance_ids)
 
-    return instance_ids
+    return instance_ids, availability_zone
 
 
-def report_price_guesstimate(basics, instance_count, start_time, end_time):
+def _report_price_guesstimate(
+    basics: BotoBasics,
+    instance_type,
+    instance_count,
+    availability_zone,
+    start_time,
+    end_time
+):
     running_time = end_time - start_time
     total_time = running_time * instance_count
     total_secs = total_time.total_seconds()
     total_mins = total_time.total_seconds() / 60
 
-    # Just find the worst price for the time period, rather than trying a more complex price break-down.
-    spot_price_history = basics.describe_spot_price_history("g4dn.xlarge", start_time, end_time)
-    prices = [float(item["SpotPrice"]) for item in spot_price_history]
+    spot_price_history = basics.describe_spot_price_history(instance_type, availability_zone, start_time, end_time)
+    spot_price_history = [(item["Timestamp"], float(item["SpotPrice"])) for item in spot_price_history]
+    prices = {item[1] for item in spot_price_history}
+
+    # This probably almost never happens - if it does then the price calculation needs to be made smarter.
+    if len(prices) > 1:
+        print(f"Prices changed over the time period - the price history is {spot_price_history}")
+
+    # For the moment, always use the worst price, rather than trying something more complex.
     max_price = max(prices)
 
     price = max_price * total_secs / 3600
 
     print(f"{instance_count} instances ran for ([days, ] h:m:s): {str(running_time)}")
-    print(f"The maximum spot price during this period was US${max_price:.2f} per hour")
-    print(f"So that's {total_mins:.3f} minutes of EC2 instance time for a total cost of at most US${price:.2f}")
+    print(f"The spot price during this period was at most US${max_price:.2f} per hour")
+    print(f"At that price, the total of {total_mins:.3f} minutes of EC2 instance time costs US${price:.2f}")
 
 
 # Monitor the instances, track their progress and terminate them once completed.
-def monitor_and_terminate(basics, group_name, instance_ids, is_finished):
+def monitor_and_terminate(basics: BotoBasics, group_name, instance_type, instance_ids, availability_zone, is_finished):
     start_time = datetime.now()
 
     retriever = LogsRetriever()
@@ -115,4 +138,4 @@ def monitor_and_terminate(basics, group_name, instance_ids, is_finished):
 
         sleep(_POLLING_INTERVAL)
 
-    report_price_guesstimate(basics, len(instance_ids), start_time, datetime.now())
+    _report_price_guesstimate(basics, instance_type, len(instance_ids), availability_zone, start_time, datetime.now())

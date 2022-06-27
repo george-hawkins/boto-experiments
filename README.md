@@ -190,6 +190,8 @@ Then terminate all the ones that aren't already listed as being in state `shutti
 $ aws ec2 terminate-instances --instance-ids i-06bfb2ebff8962544 i-0b5b95967aa51916a
 ```
 
+Or just run the bash script [`terminate_all`](terminate_all) to terminate all EC2 instances irrespective of their current state.
+
 You can check that they really have terminated with the same `describe-instances` command as above - it typically takes 30s to a minute for the instances to reach `terminated` state.
 
 Summary of main Python scripts
@@ -202,6 +204,8 @@ These are the main scripts here:
 * `create_file_store` - the script that's run once to create a file store to which a version of Blender is uploaded (and then used by the EC2 instances).
 * `clean_up.py` - a script that can be run to delete any render related resources that may have become orphaned while experimenting with things.
 * `running_instances.py` - reports the number of EC2 instances that are not in terminated state.
+
+In addition, there's the bash script `terminate_all` for terminating all EC2 instances.
 
 Running the worker locally
 --------------------------

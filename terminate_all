@@ -1,0 +1,5 @@
+#!/bin/bash -e
+
+# Just terminate everything irrespective of its current state.
+instance_ids=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].InstanceId' --o text)
+aws ec2 terminate-instances --instance-ids $instance_ids
