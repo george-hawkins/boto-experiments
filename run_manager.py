@@ -1,3 +1,4 @@
+import os.path
 import sys
 from uuid import uuid4
 
@@ -14,6 +15,7 @@ from job_steps import (
 from names import Names
 from pack import pack_blend_file
 from settings import frames_str, get_settings
+from utils import sizeof_fmt
 
 PACKED_BLEND_FILE = "packed.blend"
 
@@ -51,7 +53,8 @@ def main():
     )
 
     pack_blend_file(settings.blender, settings.blend_file, PACKED_BLEND_FILE)
-    print("Packed the .blend file")
+    size = sizeof_fmt(os.path.getsize(PACKED_BLEND_FILE))
+    print(f"Packed the .blend file to {size} (compressed)")
 
     bucket = basics.create_bucket(names.bucket)
     upload_worker_files(bucket)

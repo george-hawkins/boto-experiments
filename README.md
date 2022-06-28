@@ -435,6 +435,27 @@ E.g. the following enables all permissions for all resources for S3, CloudWatch 
 }
 ```
 
+TODO
+----
+
+Further ideas for boto3-renderer.
+
+### Purge .blend file
+
+At the moment the `.blend` file is packed to ensure it comes will all the resources it needs. But it might also be nice to ensure that the `.blend` doesn't contain unused data-blocks.
+
+See [`bpy.ops.outliner.orphans_purge`](https://docs.blender.org/api/current/bpy.ops.outliner.html#bpy.ops.outliner.orphans_purge) and the corresponding Blender menu commands (search for "Clean Up" [here](https://docs.blender.org/manual/en/latest/interface/window_system/topbar.html)).
+
+[Derek Elliot](https://www.derrk.com/) recently (late June 2022) recommended the [Atomic add-on](https://github.com/grantwilk/atomic-data-manager) (in this [video](https://www.youtube.com/watch?v=ie25UoPWQo8&t=1057s)) despite the fact that it hasn't been updated since late 2019. It helps with cleaning out `.blend` files - and the code looks very simple, e.g. look at [`unused.py`](https://github.com/grantwilk/atomic-data-manager/blob/master/stats/unused.py), where unused images, collections, data-blocks etc. are found and then at [`clean.py`](https://github.com/grantwilk/atomic-data-manager/blob/master/ops/utils/clean.py) where they're removed.
+
+It's unclear to me if data-blocks are a superset of everything else - I would have thought so except that Atomic searches for data-blocks and other things separately, but this may just be so that it can categorize the different kinds of unused things. And it's unclear if Atomic does anything more than e.g. _File / Clean Up / Recursive Unused Data-Blocks_.
+
+### Monitor for spot price changes
+
+Currently, the spot price is retrieved and displayed when the EC2 instances are created and then, when the job is finished, the spot price history over the course of the job is retrieved and the highest price during this period is used to guesstimate a price for the job.
+
+One could produce a more accurate estimate by factoring in price changes over time rather than taking the highest price. And one could monitor for price changes while the job is being processed and output any changes and perhaps also occasionally output information about the price of the job _so far_.
+
 Notes
 -----
 

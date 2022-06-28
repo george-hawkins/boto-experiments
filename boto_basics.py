@@ -177,15 +177,18 @@ class BotoBasics:
         instance_type,
         availability_zone,
         start_time,
-        end_time,
+        end_time=None,
         product_description="Linux/UNIX"
     ):
+        kwargs = {}
+        if end_time is not None:
+            kwargs["EndTime"] = end_time
         return self._get_ec2_client().describe_spot_price_history(
             InstanceTypes=[instance_type],
             AvailabilityZone=availability_zone,
             StartTime=start_time,
-            EndTime=end_time,
-            ProductDescriptions=[product_description]
+            ProductDescriptions=[product_description],
+            **kwargs
         )["SpotPriceHistory"]
 
     @property

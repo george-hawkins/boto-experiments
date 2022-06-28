@@ -11,7 +11,13 @@ from log_retriever import LogsRetriever
 
 # It takes about 30s for a typical instance to start (go from "pending" to "running" and a similar amount of
 # time to go from "running" via "shutting-down" to "terminated"). So 10s seems a reasonable polling interval.
+from utils import timedelta_fmt
+
 _POLLING_INTERVAL = 10
+
+
+def _now():
+    return datetime.now(timezone.utc)
 
 
 def _get_latest_image_id(basics, image_name_pattern):
@@ -19,7 +25,7 @@ def _get_latest_image_id(basics, image_name_pattern):
 
     # For some requests botocore handles the parsing to datetime for others you have to do it yourself.
     created = parse_timestamp(image["CreationDate"])
-    delta = datetime.now(timezone.utc) - created
+    delta = _now() - created
     print(f"Using image {image['Description']} ({image['Name']})")
     print(f"Image created: {created} ({delta.days} days ago)")
 
@@ -53,6 +59,9 @@ def create_instances(
         spot=True
     )
 
+    # `created_count` should always equal `instance_count` unless price constraints are added.
+    created_count = len(instances)
+
     availability_zone = {instance.placement["AvailabilityZone"] for instance in instances}
 
     assert len(availability_zone) == 1, f"expected one availability zone, found {availability_zone}"
@@ -64,7 +73,20 @@ def create_instances(
     instance_ids = [instance.instance_id for instance in instances]
     basics.wait_instances_exist(instance_ids)
 
+    print(f"Started {created_count} {instance_type} instances")
+    _report_per_hour_price(basics, instance_type, created_count, availability_zone)
+
     return instance_ids, availability_zone
+
+
+def _report_per_hour_price(basics: BotoBasics, instance_type, instance_count, availability_zone):
+    spot_price_history = basics.describe_spot_price_history(instance_type, availability_zone, _now())
+    prices = [float(item["SpotPrice"]) for item in spot_price_history]
+    max_price = max(prices)
+    total_price = max_price * instance_count
+
+    print(f"The current spot price is US${max_price:.2f} per hour")
+    print(f"That's US${total_price:.2f} for {instance_count} instances per hour")
 
 
 def _report_price_guesstimate(
@@ -93,14 +115,14 @@ def _report_price_guesstimate(
 
     price = max_price * total_secs / 3600
 
-    print(f"{instance_count} instances ran for ([days, ] h:m:s): {str(running_time)}")
+    print(f"{instance_count} instances ran for {timedelta_fmt(running_time)} of wall-clock time")
     print(f"The spot price during this period was at most US${max_price:.2f} per hour")
-    print(f"At that price, the total of {total_mins:.3f} minutes of EC2 instance time costs US${price:.2f}")
+    print(f"At that price, the total of {total_mins:.3f} minutes of EC2 instance time would cost US${price:.2f}")
 
 
 # Monitor the instances, track their progress and terminate them once completed.
 def monitor_and_terminate(basics: BotoBasics, group_name, instance_type, instance_ids, availability_zone, is_finished):
-    start_time = datetime.now()
+    start_time = _now()
 
     retriever = LogsRetriever()
 
@@ -138,4 +160,4 @@ def monitor_and_terminate(basics: BotoBasics, group_name, instance_type, instanc
 
         sleep(_POLLING_INTERVAL)
 
-    _report_price_guesstimate(basics, instance_type, len(instance_ids), availability_zone, start_time, datetime.now())
+    _report_price_guesstimate(basics, instance_type, len(instance_ids), availability_zone, start_time, _now())
