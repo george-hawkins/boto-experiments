@@ -440,6 +440,12 @@ TODO
 
 Further ideas for boto3-renderer.
 
+### Multiple renders
+
+At the moment, you can only submit one render. So all instances are spun up, render the frames for a single animation and then shut down. The startup and shutdown time is about 2 minutes. So, for 32 instances that's already an hour of EC2 instance time just for that.
+
+It would obviously be nice to be able to specify multiple renders and have the instances keep going until everything is finished.
+
 ### Purge .blend file
 
 At the moment the `.blend` file is packed to ensure it comes will all the resources it needs. But it might also be nice to ensure that the `.blend` doesn't contain unused data-blocks.
