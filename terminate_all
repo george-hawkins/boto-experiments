@@ -1,5 +1,12 @@
 #!/bin/bash -e
 
 # Just terminate everything irrespective of its current state.
-instance_ids=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].InstanceId' --o text)
-aws ec2 terminate-instances --instance-ids $instance_ids
+instance_ids=( $(aws ec2 describe-instances --query 'Reservations[*].Instances[*].InstanceId' --o text) )
+count=${#instance_ids[*]}
+
+if [ $count -eq 0 ]
+then
+    echo "No instances found (in any state, terminated or otherwise)"
+else
+    aws ec2 terminate-instances --instance-ids ${instance_ids[*]}
+fi

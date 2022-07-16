@@ -117,7 +117,8 @@ class BotoBasics:
         iam_instance_profile=None,
         user_data=None,
         count=1,
-        min_count=1,
+        min_count=None,
+        min_factor=0.5,
         shutdown_behavior="terminate",
         spot=False
     ) -> List[Instance]:
@@ -133,6 +134,10 @@ class BotoBasics:
 
         # Set the tag that's shown as the instance name in the EC2 dashboard.
         name_tag = {"ResourceType": "instance", "Tags": [{"Key": "Name", "Value": name}]}
+
+        # If no `min_count` is specified then ask for at least the `min_factor` amount.
+        if min_count is None:
+            min_count = int(count * min_factor)
 
         # noinspection PyTypeChecker
         return self._get_ec2_resource().create_instances(

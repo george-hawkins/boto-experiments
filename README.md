@@ -435,10 +435,52 @@ E.g. the following enables all permissions for all resources for S3, CloudWatch 
 }
 ```
 
+Changing region
+---------------
+
+I've seen the eu-central-1 region completely fill up, i.e. no available spot capacity (search for `MinCount` below to see the resulting error).
+
+By default, the region specified in `~/.aws/config` is used. If there is no spot capacity in the default region, you can specify another region using `AWS_DEFAULT_REGION` as described below (with eu-west-1 as the desired region).
+
+**Important:** quotas are on a per-region basis, so you need to also have a quota for the relevant instances in the other region.
+
+You need to have a security group for the new region, this can be created just as done for the default region:
+
+```
+$ name=RenderJobWorkerSecurityGroup
+$ now=$(date --iso-8601=seconds --utc)
+$ AWS_DEFAULT_REGION=eu-west-1 aws ec2 create-security-group --group-name $name --description "$name created $now"
+```
+
+This is a once-off operation. Then you can run jobs in this region:
+
+```
+$ AWS_DEFAULT_REGION=eu-west-1 python run_manager.py foo.blend
+```
+
+Other useful commands using `AWS_DEFAULT_REGION`:
+
+```
+$ AWS_DEFAULT_REGION=eu-west-1 ./terminate_all
+$ AWS_DEFAULT_REGION=eu-west-1 python clean_up.py 
+```
+
+Note: unless, you also create a file store for this region (and updated `settings.ini`) then the Blender archive will be copied across regions and incur a resulting cost.
+
+**TODO:** as I have no instance quotas outside my default region, I haven't got beyond trying to create the instances, at which point it fails with:
+
+```
+botocore.exceptions.ClientError: An error occurred (MaxSpotInstanceCountExceeded) when calling the RunInstances operation: Max spot instance count exceeded
+```
+
 TODO
 ----
 
 Further ideas for boto3-renderer.
+
+### Check output settings
+
+The whole process assumes you're rendering out individual frames. If the `.blend` file is set e.g. to render a `.mpg` then, at the moment, everything gets confused.
 
 ### Multiple renders
 
@@ -465,9 +507,17 @@ One could produce a more accurate estimate by factoring in price changes over ti
 Notes
 -----
 
-The [`user_data`](templates/user_data) script installs the v2 version of the AWS CLI. At the moment (mid 2022), Amazon Linux 2 still comes with just v1 installed. Once v2 is installed, you don't have to take any extra steps - it's installed in `/usr/local/bin` while v1 is installed in `/usr/bin` and `local` comes first in the default path so, it always takes precedence.
+**1.** Currently, when creating instances, `MinCount` defaults to to half the requested count of instances. This means things will fail if there is not enough capacity even if there is some (but not enough) capacity available. This isn't hypothetical - even when requesting just 32 instances, I've seen this happen and you get an error like this:
 
-For other notes, see also:
+```
+botocore.exceptions.ClientError: An error occurred (InsufficientInstanceCapacity) when calling the RunInstances operation (reached max retries: 2): There is no Spot capacity available that matches your request.
+```
+
+This can happen even if you've specified that you'll accept 100% of the on-demand price, i.e. you'll take instances even if there's no spot discount. If there's no spot capacity then this presumably implies that all on-demand **and** all spot capacity has been consumed.
+
+**2.** The [`user_data`](templates/user_data) script installs the v2 version of the AWS CLI. At the moment (mid 2022), Amazon Linux 2 still comes with just v1 installed. Once v2 is installed, you don't have to take any extra steps - it's installed in `/usr/local/bin` while v1 is installed in `/usr/bin` and `local` comes first in the default path so, it always takes precedence.
+
+**3.** For other notes, see also:
 
 * [`boto3-notes.md`](docs/boto3-notes.md).
 * [`public-ip-address.md`](docs/public-ip-address.md)

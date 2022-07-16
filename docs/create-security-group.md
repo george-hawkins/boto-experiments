@@ -20,6 +20,8 @@ $ aws ec2 create-default-vpc --query 'Vpc.VpcId' --output text
 vpc-080daca15075a1dba
 ```
 
+**Update:** it may be the case that a default VPC is now automatically created, for you, for every region.
+
 Once you've created a default VPC (or if you already had one), create a security group:
 
 ```
