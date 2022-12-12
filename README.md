@@ -482,6 +482,20 @@ Further ideas for boto3-renderer.
 
 The whole process assumes you're rendering out individual frames. If the `.blend` file is set e.g. to render a `.mpg` then, at the moment, everything gets confused.
 
+### Fix log retrieval
+
+The same item can appear in the log output more than once, e.g. here about `rendering frame 47`:
+
+```
+2022-07-16 22:12:30.606 i-0f4743a2984433757 rendering frame 47
+2022-07-16 22:12:30.663 i-023374322b28296f2 completed and uploaded s3://render-job-bucket-ef0c112b-437e-47aa-9d35-f8011cdaab45/frames/frame-0019.exr
+...
+2022-07-16 22:12:40.190 i-027974863d0237636 rendering frame 64
+2022-07-16 22:12:30.606 i-0f4743a2984433757 rendering frame 47
+```
+
+Less obvious is that messages are occassionally lost, e.g. an instance reports that it completed a frame but the message that it started rendering that frame is missing from the output.
+
 ### Multiple renders
 
 At the moment, you can only submit one render. So all instances are spun up, render the frames for a single animation and then shut down. The startup and shutdown time is about 2 minutes. So, for 32 instances that's already an hour of EC2 instance time just for that.
