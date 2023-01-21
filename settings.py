@@ -106,7 +106,7 @@ def get_settings() -> Settings:
 
     file_format = attrs["file_format"]
     if attrs["is_movie_format"]:
-        sys.exit(f"the .blend file is using the movie {file_format}, an image format like PNG or EXR must be used")
+        sys.exit(f"the .blend file is using the movie format {file_format}, an image format like PNG or EXR must be used")
 
     # `interactive` controls prompting for input. It's not about whether Python was started in interactive (-i) mode.
     interactive = args.interactive if sys.stdin.isatty() else False
