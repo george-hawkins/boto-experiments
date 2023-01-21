@@ -56,6 +56,7 @@ def create_db_table(basics, table_name, frames):
 
 
 def _download_objects(bucket, keys, output_dir):
+    print("Downloading images ", end="")
     for key in keys:
         obj = bucket.Object(key)
         filename = key.split("/")[-1]

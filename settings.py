@@ -2,9 +2,12 @@ import argparse
 import sys
 from collections import namedtuple
 
+from boto_basics import BotoBasics, get_s3_uri
 from config import get_config
 from scene_attributes import get_scene_attributes
 
+
+basics = BotoBasics()
 
 Settings = namedtuple("Settings", [
     "instance_count",
@@ -107,6 +110,15 @@ def get_settings() -> Settings:
     file_format = attrs["file_format"]
     if attrs["is_movie_format"]:
         sys.exit(f"the .blend file is using the movie format {file_format}, an image format like PNG or EXR must be used")
+
+    if not file_store.startswith("s3://"):
+        sys.exit(f"the file store URI should start with s3:// but is {file_store}")
+
+    # Sanity check that the Blender archive has been copied to the file store.
+    store = basics.get_bucket(file_store[5:])
+    archive = store.Object(blender_archive)
+    if not basics.object_exists(archive):
+        sys.exit(f"{get_s3_uri(archive)} does not exist")
 
     # `interactive` controls prompting for input. It's not about whether Python was started in interactive (-i) mode.
     interactive = args.interactive if sys.stdin.isatty() else False
