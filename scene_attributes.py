@@ -16,7 +16,9 @@ def get_scene_attributes(blender, input_file):
             "frame_end": scene.frame_end,
             "frame_step": scene.frame_step,
             "samples": scene.cycles.samples,
-            "motion_blur": scene.render.use_motion_blur
+            "motion_blur": scene.render.use_motion_blur,
+            "is_movie_format": scene.render.is_movie_format,
+            "file_format": scene.render.image_settings.file_format
         }}
 
         {dump_dict("attributes")}

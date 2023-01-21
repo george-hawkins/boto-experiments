@@ -18,6 +18,7 @@ Settings = namedtuple("Settings", [
     "blender_archive",
     "blend_file",
     "frames",
+    "file_format",
     "samples",
     "motion_blur",
     "interactive"
@@ -103,6 +104,10 @@ def get_settings() -> Settings:
             "to confirm this is OK or use --enable-motion-blur to enable it"
         )
 
+    file_format = attrs["file_format"]
+    if attrs["is_movie_format"]:
+        sys.exit(f"the .blend file is using the movie {file_format}, an image format like PNG or EXR must be used")
+
     # `interactive` controls prompting for input. It's not about whether Python was started in interactive (-i) mode.
     interactive = args.interactive if sys.stdin.isatty() else False
 
@@ -127,6 +132,7 @@ def get_settings() -> Settings:
         blender_archive=blender_archive,
         blend_file=blend_file,
         frames=frames,
+        file_format=file_format,
         samples=samples,
         motion_blur=motion_blur,
         interactive=interactive
