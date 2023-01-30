@@ -99,8 +99,11 @@ class BotoBasics:
     def _get_ec2_client(self) -> EC2Client:
         return self._get_ec2_resource().meta.client
 
-    def get_latest_image(self, name_pattern):
-        images = self._get_ec2_client().describe_images(Filters=[{"Name": "name", "Values": [name_pattern]}])["Images"]
+    def get_latest_image(self, name_pattern, owner):
+        images = self._get_ec2_client().describe_images(
+            Owners=[owner],
+            Filters=[{"Name": "name", "Values": [name_pattern]}]
+        )["Images"]
         return sorted(images, key=lambda item: item["CreationDate"])[-1]
 
     def _get_ec2_resource(self) -> EC2ServiceResource:
@@ -138,6 +141,9 @@ class BotoBasics:
         # If no `min_count` is specified then ask for at least the `min_factor` amount.
         if min_count is None:
             min_count = int(count * min_factor)
+            # `min_count` must be greater that zero.
+            if min_count == 0:
+                min_count = 1
 
         # noinspection PyTypeChecker
         return self._get_ec2_resource().create_instances(

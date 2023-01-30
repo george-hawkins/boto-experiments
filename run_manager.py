@@ -75,6 +75,7 @@ def main():
         settings.instance_count,
         names.worker,
         settings.image_name_pattern,
+        settings.image_owner,
         settings.instance_type,
         settings.security_group_name,
         settings.key_name,

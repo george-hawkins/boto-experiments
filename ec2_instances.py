@@ -20,8 +20,8 @@ def _now():
     return datetime.now(timezone.utc)
 
 
-def _get_latest_image_id(basics, image_name_pattern):
-    image = basics.get_latest_image(image_name_pattern)
+def _get_latest_image_id(basics, image_name_pattern, image_owner):
+    image = basics.get_latest_image(image_name_pattern, image_owner)
 
     # For some requests botocore handles the parsing to datetime for others you have to do it yourself.
     created = parse_timestamp(image["CreationDate"])
@@ -37,13 +37,14 @@ def create_instances(
     instance_count,
     instance_name,
     image_name_pattern,
+    image_owner,
     instance_type,
     security_group_name,
     key_name,
     iam_instance_profile,
     user_data_filename
 ):
-    image_id = _get_latest_image_id(basics, image_name_pattern)
+    image_id = _get_latest_image_id(basics, image_name_pattern, image_owner)
 
     user_data = Path(user_data_filename).read_text()
 

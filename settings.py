@@ -13,6 +13,7 @@ Settings = namedtuple("Settings", [
     "instance_count",
     "instance_type",
     "image_name_pattern",
+    "image_owner",
     "security_group_name",
     "key_name",
     "iam_instance_profile",
@@ -62,6 +63,7 @@ def get_settings() -> Settings:
     instance_count = config.getint("instance_count")
     instance_type = config.get("instance_type")
     image_name_pattern = config.get("image_name_pattern")
+    image_owner = config.get("image_owner")
     security_group_name = config.get("security_group_name")
     key_name = config.get("key_name")
     iam_instance_profile = config.get("iam_instance_profile")
@@ -136,6 +138,7 @@ def get_settings() -> Settings:
         instance_count=instance_count,
         instance_type=instance_type,
         image_name_pattern=image_name_pattern,
+        image_owner=image_owner,
         security_group_name=security_group_name,
         key_name=key_name,
         iam_instance_profile=iam_instance_profile,
