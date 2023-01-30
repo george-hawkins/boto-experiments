@@ -1,8 +1,5 @@
 #!/bin/bash
 
-exec >> /tmp/job.out
-exec 2>&1
-
 # This script is run as root and is stored as `/var/lib/cloud/instance/scripts/part-001` on EC2 instances.
 
 # The initial PWD is /.
@@ -19,4 +16,4 @@ aws s3 cp s3://$bucket_name . --recursive
 chmod u+x start_job 
 ./start_job
 
-#poweroff
+poweroff

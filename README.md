@@ -69,6 +69,20 @@ At this time, the only real option with Nvidia drivers already installed is the 
 
 So, in the end, I created a custom AMI as described in [`create-ami.md`](create-ami.md).
 
+### Comparison
+
+The lowest spot price for the G5 instances is, exactly like the G4DN ones, ~30% of the on-demand price:
+
+* `g4dn.xlarge`: $0.20
+* `g5.xlarge`: $0.38
+
+When rendering an animation of 1027 frames:
+
+* The `g5.xlarge` setup took 17m 14s of wall-clock time and 552 minutes of EC2 instance time and cost $3.47.
+* The `g4dn.xlarge` setup took 22m 15s of wall-clock time and 712 minutes of EC2 instance time and cost $2.34.
+
+I.e. the `g4dn.xlarge` instances were 33% cheaper. So, making the changes to be able to use the G5 instances didn't buy any cost savings but it did buy the possibility to switch between G4DN and G5 instances if spot instances of one or the other aren't available. And it brings the ability to do all rendering using Optix rather than CUDA.
+
 Setup
 -----
 

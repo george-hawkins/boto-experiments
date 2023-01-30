@@ -52,7 +52,7 @@ Note that above, it tells us that `A newer release of "Amazon Linux" is availabl
 
 If the `motd` isn't removed, it'll continue complaining at logon that a newer release is available despite having upgraded.
 
-Make sure the `yum` caches are up-to-date and upgrade everything that needs to upgraded (and remove outdated packages):
+Make sure the `yum` caches are up-to-date and upgrade everything that needs to be upgraded (and, in the process, remove outdated packages):
 
 ```
 # yum clean expire-cache
@@ -79,7 +79,7 @@ $ curl -s https://docs.nvidia.com/datacenter/tesla/drivers/releases.json | jq --
 525.60.13
 ```
 
-The `jq` is looking for the latest driver version where the `type` is `production branch` in the JSON retrieved from <https://docs.nvidia.com/datacenter/tesla/drivers/releases.json>.
+The `jq` command is looking for the latest driver version where the `type` is `production branch` in the JSON retrieved from <https://docs.nvidia.com/datacenter/tesla/drivers/releases.json>.
 
 Nvidia publishes various different pages, release notes and forms that supposedly show or retrieve the latest suitable driver version but are out of sync with each other. The `releases.json` file _seems_ to be definitive.
 
@@ -93,7 +93,7 @@ Then retrieve this version:
 # curl -O $BASE_URL/$DRIVER_VERSION/NVIDIA-Linux-x86_64-$DRIVER_VERSION.run
 ```
 
-Install the dependencies needed to by the `.run` script:
+Install the dependencies needed by the `.run` script:
 
 ```
 # yum install -y kernel-devel vulkan-loader libglvnd-devel automake bzip2
@@ -107,7 +107,7 @@ And install the driver:
 
 This uses an ncurses UI, you can also run it with `--ui=none` for just a simple command line prompting interface but it's slightly less clear.
 
-The installer complains that it `was forced to guess the X library path` and suggests you install `pkg-config` but it's already installed and the real issue is that it calls `pkg-config` for `xorg-server`. We can see that `pkg-config` can lookup various variables for `x11` but none for `xorg-server`:
+The installer complains that it `was forced to guess the X library path` and suggests you install `pkg-config` but it's already installed and the real issue is that it calls `pkg-config` for `xorg-server` (which isn't installed). We can see that `pkg-config` can lookup various variables for e.g. `x11` but none for `xorg-server`:
 
 ```
 $ pkg-config --print-variables x11
@@ -126,7 +126,7 @@ This isn't an issue and the installer's guess is fine.
 
 When asked whether to `Install NVIDIA's 32-bit compatibility libraries`, just select `No`.
 
-You can now safely uninstall the various things needed to build the Nvidia kernel modules etc. and the driver download:
+You can now safely uninstall the various things needed to build the Nvidia kernel modules etc. and remove the driver download:
 
 ```
 $ yum remove -y kernel-devel vulkan-loader libglvnd-devel automake bzip2
@@ -152,7 +152,7 @@ ami-0181deac890894a6f
 $ IMAGE_ID=ami-0181deac890894a6f
 ```
 
-**Important:** do not terminate the original instance until the `create-image` completes its work. To check its progress:
+**Important:** do not terminate the original instance until the `create-image` completes its work. To check its state:
 
 ```
 $ aws ec2 describe-images --image-id $IMAGE_ID --query 'Images[*].[State, StateReason.Message]' --output text
@@ -203,7 +203,7 @@ Checking Cycles and Optix
 
 You can check that Blender works with Cycles and Optix as follows.
 
-On your local machine, create a `.blend` file with a minimal scene with Cycles set as the renderer with just 32 samples and copy the file to the EC2 instance:
+On your local machine, create a `.blend` file with a minimal scene with Cycles set as the renderer and just 32 samples and copy the file to the EC2 instance:
 
 ```
 $ INSTANCE_IP=3.72.246.75
