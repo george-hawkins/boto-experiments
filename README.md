@@ -50,6 +50,7 @@ Various other settings must be configured in [`settings.ini`](settings.ini):
 * `instance_count` - a default to be used if `--ec2-instances` is not specified as a command line argument.
 * `instance_type` - the EC2 instance type to use, e.g. `g4dn.xlarge`.
 * `image_name_pattern` - the pattern to use to determine the image to run on the instances, e.g. `amzn2-ami-graphics-hvm-*`.
+* `image_owner` - the image owner, typically `aws-marketplace` or `self`.
 
 You also have to specify the `security_group_name` and `iam_instance_profile` that are used by the EC2 instances - these are covered later.
 
@@ -58,6 +59,10 @@ And you have to specify a `file_store` bucket and a `blender_archive` that's sto
 A pattern is used for the image name so that the latest available version of an image is always used. E.g. if using the [Amazon Linux 2 AMI with NVIDIA TESLA GPU Driver](https://aws.amazon.com/marketplace/pp/prodview-64e4rx3h733ru), the pattern `amzn2-ami-graphics-hvm-*` always maps to the latest version rather than a specific version, e.g. the `2.0.20220606.1` one, that swiftly becomes stale.
 
 Note: as the [G5 instances](https://aws.amazon.com/ec2/instance-types/g5/) become more widely available, it will make sense to switch from `g4dn.xlarge` to `g5.xlarge`.
+
+Currently (Jan 21, 2023), the [Amazon Linux 2 AMI with NVIDIA TESLA GPU Driver](https://aws.amazon.com/marketplace/pp/prodview-64e4rx3h733ru) doesn't list the G5 instances among its supported instance types and if you try to start a G5 instance with this AMI it will fail.
+
+To find AMIs that can run on G5 instances, go to [AWS Marketplace search](https://aws.amazon.com/marketplace/search), tick _Amazon Machine Image_ in the _Deliver methods_ section, this causes the _Instance type_ section to become available and you can expand the _Accelerated Computing_ subsection and select _g5.xlarge_. At the moment, the only real option with Nvidia drivers already installed is the [NVIDIA GPU-Optimized AMI](https://aws.amazon.com/marketplace/pp/prodview-7ikjtg3um26wq) - oddly, it is only infrequently updated, e.g. at the moment (Jan 21, 2023), it was last update mid-2022 and comes with driver version 515.48.07 while the latest driver version is 525.85.05.
 
 Setup
 -----
