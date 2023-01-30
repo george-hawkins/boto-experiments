@@ -26,7 +26,8 @@ def _get_latest_image_id(basics, image_name_pattern, image_owner):
     # For some requests botocore handles the parsing to datetime for others you have to do it yourself.
     created = parse_timestamp(image["CreationDate"])
     delta = _now() - created
-    print(f"Using image {image['Description']} ({image['Name']})")
+    description = f"{image['Description']} ({image['Name']})" if "Description" in image else image["Name"]
+    print(f"Using image {description}")
     print(f"Image created: {created} ({delta.days} days ago)")
 
     return image["ImageId"]

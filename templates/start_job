@@ -1,10 +1,5 @@
 #!/bin/bash -e
 
-# Unlike the Amazon Linux 2 AMI with NVIDIA TESLA GPU Driver, the Nvidia ones do not already have these packages installed.
-apt install libgl-dev
-apt install libxrender-dev
-apt install libxi-dev
-
 # Download and unpack Blender.
 s3_file="$file_store/$blender_archive"
 aws s3 cp "$s3_file" .

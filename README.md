@@ -58,11 +58,16 @@ And you have to specify a `file_store` bucket and a `blender_archive` that's sto
 
 A pattern is used for the image name so that the latest available version of an image is always used. E.g. if using the [Amazon Linux 2 AMI with NVIDIA TESLA GPU Driver](https://aws.amazon.com/marketplace/pp/prodview-64e4rx3h733ru), the pattern `amzn2-ami-graphics-hvm-*` always maps to the latest version rather than a specific version, e.g. the `2.0.20220606.1` one, that swiftly becomes stale.
 
-Note: as the [G5 instances](https://aws.amazon.com/ec2/instance-types/g5/) become more widely available, it will make sense to switch from `g4dn.xlarge` to `g5.xlarge`.
+Update to G5 instances
+----------------------
 
-Currently (Jan 21, 2023), the [Amazon Linux 2 AMI with NVIDIA TESLA GPU Driver](https://aws.amazon.com/marketplace/pp/prodview-64e4rx3h733ru) doesn't list the G5 instances among its supported instance types and if you try to start a G5 instance with this AMI it will fail.
+In January 2023, I wanted to be able to use `g5.xlarge` instances as well as `g4dn.xlarge` instances. Oddly, at this time, the _Amazon Linux 2 AMI with NVIDIA TESLA GPU Driver_ doesn't list the [G5 instances](https://aws.amazon.com/ec2/instance-types/g5/) among its supported instance types and if you try to start a G5 instance with this AMI it will fail.
 
-To find AMIs that can run on G5 instances, go to [AWS Marketplace search](https://aws.amazon.com/marketplace/search), tick _Amazon Machine Image_ in the _Deliver methods_ section, this causes the _Instance type_ section to become available and you can expand the _Accelerated Computing_ subsection and select _g5.xlarge_. At the moment, the only real option with Nvidia drivers already installed is the [NVIDIA GPU-Optimized AMI](https://aws.amazon.com/marketplace/pp/prodview-7ikjtg3um26wq) - oddly, it is only infrequently updated, e.g. at the moment (Jan 21, 2023), it was last update mid-2022 and comes with driver version 515.48.07 while the latest driver version is 525.85.05.
+To find AMIs that can run on G5 instances, go to [AWS Marketplace search](https://aws.amazon.com/marketplace/search), tick _Amazon Machine Image_ in the _Deliver methods_ section, this causes the _Instance type_ section to become available and you can expand the _Accelerated Computing_ subsection and select _g5.xlarge_.
+
+At this time, the only real option with Nvidia drivers already installed is the [NVIDIA GPU-Optimized AMI](https://aws.amazon.com/marketplace/pp/prodview-7ikjtg3um26wq). However, it's infrequently updated and instead does an `apt upgrade` every time an instance using this image launches. This step typically adds an additional 5 minutes to the launch time. And even then additional packages (that were already preinstalled with the _Amazon Linux 2 AMI with NVIDIA TESLA GPU Driver_) need to be installed and the ordering as to when this happens, if using [`user_data`](templates/user_data), means that these installs _seem_ to happen before the full `upgrade` and are rejected (due to some kind of inconsistency in the state of `apt` at this point). All in all, this proved a non-stater.
+
+So, in the end, I created a custom AMI as described in [`create-ami.md`](create-ami.md).
 
 Setup
 -----
