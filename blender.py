@@ -32,6 +32,7 @@ def run_blender(
     # And if `cwd` isn't set then Blender can't find resources with relative paths.
     popenargs = [
         blender,
+        "--factory-startup",
         "--background",
         input_file,
         "--python-expr", python_code
